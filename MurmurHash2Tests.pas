@@ -1,12 +1,12 @@
-unit MurmurHashTests;
+﻿unit MurmurHash2Tests;
 
 interface
 
 uses
-	TestFramework, SysUtils, Murmur;
+	TestFramework, SysUtils, MurmurHash;
 
 type
-	TMurmur3Tests = class(TTestCase)
+	TMurmur2Tests = class(TTestCase)
 	protected
 		FFreq: Int64;
 		procedure SetUp; override;
@@ -52,9 +52,9 @@ begin
 end;
 
 
-{ TMurmur3Tests }
+{ TMurmur2Tests }
 
-procedure TMurmur3Tests.SelfTest_32_CanonicalSMHasher;
+procedure TMurmur2Tests.SelfTest_32_CanonicalSMHasher;
 const
 	Expected: LongWord = $B0F57EE3;
 var
@@ -110,7 +110,7 @@ begin
 	CheckEquals(Expected, Actual, 'Murmur3_32 SMHasher test');
 end;
 
-procedure TMurmur3Tests.SelfTest_32_TestVectors;
+procedure TMurmur2Tests.SelfTest_32_TestVectors;
 var
 	ws: UnicodeString;
 	t1, t2: Int64;
@@ -250,7 +250,7 @@ begin
 	TestString(StringOfChar('U', 1005), 0, 3970215021);
 end;
 
-procedure TMurmur3Tests.SetUp;
+procedure TMurmur2Tests.SetUp;
 begin
   inherited;
 
@@ -258,13 +258,13 @@ begin
 		FFreq := -1;
 end;
 
-procedure TMurmur3Tests.TearDown;
+procedure TMurmur2Tests.TearDown;
 begin
   inherited;
 
 end;
 
 initialization
-	TestFramework.RegisterTest('MurmurHash3', TMurmur3Tests.Suite);
+	TestFramework.RegisterTest('MurmurHash2', TMurmur2Tests.Suite);
 
 end.
