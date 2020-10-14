@@ -29,16 +29,12 @@ type
   PUInt64Array = ^UInt64Array;
 
   TMurMur1 = class
-  strict private
-    const m: UInt32 = $c6a4a793;
-    const r: UInt32 = 16;
   public
     class function Hash(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
     class function HashAligned(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
   end;
 
   TMurMur2 = class
-  strict private
   public
     class function Hash(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
     class function HashA(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
@@ -49,7 +45,6 @@ type
   end;
 
   TMurMur3 = class
-  strict private
   public
     class procedure Hash_x86_32(const Key; KeyLen: UInt32; const Seed: UInt32; OutVal: Pointer);
     class procedure Hash_x86_128(const Key; KeyLen: UInt32; const Seed: UInt32; OutVal: Pointer);
@@ -62,15 +57,27 @@ uses
   SysUtils, Math;
 
 { Utils }
+const
+  SH_AMNT_4  = 4;
+  SH_AMNT_8  = 8;
+  SH_AMNT_10 = 10;
+  SH_AMNT_13 = 13;
+  SH_AMNT_15 = 15;
+  SH_AMNT_16 = 16;
+  SH_AMNT_17 = 17;
+  SH_AMNT_24 = 24;
+  SH_AMNT_32 = 32;
+  SH_AMNT_47 = 47;
+  SH_AMNT_64 = 64;
 
 function ROTL32(x: UInt32; n: Int8): UInt32; inline;
 begin
-  Result := (x shl n) or (x shr (32 - n));
+  Result := (x shl n) or (x shr (SH_AMNT_32 - n));
 end;
 
 function ROTL64(x: UInt64; n: Int8): UInt64; inline;
 begin
-  Result := (x shl n) or (x shr (64 - n));
+  Result := (x shl n) or (x shr (SH_AMNT_64 - n));
 end;
 
 {------------------------------------------------------------------------------
@@ -79,11 +86,11 @@ end;
 
 function fmix32(h: UInt32): UInt32; inline;
 begin
-  h := h xor (h shr 16);
+  h := h xor (h shr SH_AMNT_16);
   h := h * $85ebca6b;
-  h := h xor (h shr 13);
+  h := h xor (h shr SH_AMNT_13);
   h := h * $c2b2ae35;
-  h := h xor (h shr 16);
+  h := h xor (h shr SH_AMNT_16);
 
   Result := h;
 end;
@@ -128,6 +135,8 @@ end;
 // https://github.com/rurban/smhasher/blob/master/MurmurHash1.cpp
 // objsize: 0-0x157: 343
 class function TMurMur1.Hash(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
+const
+  m: UInt32 = $c6a4a793;
 var
   k:      UInt32;
   data:   PByteArray;
@@ -143,7 +152,7 @@ begin
     k      := PUInt32(@(data[i]))^;
     Result := Result + k;
     Result := Result * m;
-    Result := Result xor (Result shr r);
+    Result := Result xor (Result shr SH_AMNT_16);
 
     Inc(i, 4);
     Dec(len, 4);
@@ -151,21 +160,21 @@ begin
 
   case len of
     3:
-      Result := Result + (data[i + 2] shl r);
+      Result := Result + (data[i + 2] shl SH_AMNT_16);
     2:
-      Result := Result + (data[i + 1] shl 8);
+      Result := Result + (data[i + 1] shl SH_AMNT_8);
     1:
     begin
       Result := Result + data[i];
       Result := Result * m;
-      Result := Result xor (Result shr r);
+      Result := Result xor (Result shr SH_AMNT_16);
     end;
   end;
 
   Result := Result * m;
-  Result := Result xor (Result shr 10);
+  Result := Result xor (Result shr SH_AMNT_10);
   Result := Result * m;
-  Result := Result xor (Result shr 17);
+  Result := Result xor (Result shr SH_AMNT_17);
 end;
 
 {------------------------------------------------------------------------------
@@ -178,6 +187,8 @@ end;
   objsize: 0x160-0x4e3: 899
 }
 class function TMurMur1.HashAligned(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
+const
+  m: UInt32 = $c6a4a793;
 var
   t, d:                        UInt32;
   data:                        PByteArray;
@@ -196,17 +207,17 @@ begin
     d := 0;
 
     case align of
-      1: t := t or (data[i + 2] shl r);
-      2: t := t or (data[i + 1] shl 8);
-      3: t := t or data[i + 0];
+      1: t := t or (data[2] shl SH_AMNT_16);
+      2: t := t or (data[1] shl SH_AMNT_8);
+      3: t := t or data[0];
     end;
 
-    t := t shl (8 * align);
+    t := t shl (SH_AMNT_8 * align);
     Inc(i, 4 - align);
     Dec(len, 4 - align);
 
-    sl := 8 * (4 - align);
-    sr := 8 * align;
+    sl := SH_AMNT_8 * (4 - align);
+    sr := SH_AMNT_8 * align;
 
     // Mix
     while len >= 4 do
@@ -215,7 +226,7 @@ begin
       t      := (t shr sr) or (d shl sl);
       Result := Result + t;
       Result := Result * m;
-      Result := Result xor (Result shr r);
+      Result := Result xor (Result shr SH_AMNT_16);
       t      := d;
 
       Inc(i, 4);
@@ -228,16 +239,16 @@ begin
 
     case pack of
       3:
-        d := d or (data[i + 2] shl r);
+        d := d or (data[i + 2] shl SH_AMNT_16);
       2:
-        d := d or (data[i + 1] shl 8);
+        d := d or (data[i + 1] shl SH_AMNT_8);
       1:
         d := d or data[i];
       0:
       begin
-        Result := Result + ((r shr sr) or (d shl sl));
+        Result := Result + ((SH_AMNT_16 shr sr) or (d shl sl));
         Result := Result * m;
-        Result := Result xor (Result shr r);
+        Result := Result xor (Result shr SH_AMNT_16);
       end;
     end;
 
@@ -249,7 +260,7 @@ begin
     begin
       Result := Result + PUInt32(@(data[i]))^;
       Result := Result * m;
-      Result := Result xor (Result shr r);
+      Result := Result xor (Result shr SH_AMNT_16);
 
       Inc(i, 4);
       Dec(len, 4);
@@ -259,21 +270,21 @@ begin
   // Handle tail bytes
   case len of
     3:
-      Result := Result + (data[i + 2] shl r);
+      Result := Result + (data[i + 2] shl SH_AMNT_16);
     2:
-      Result := Result + (data[i + 1] shl 8);
+      Result := Result + (data[i + 1] shl SH_AMNT_8);
     1:
     begin
       Result := Result + data[i];
       Result := Result * m;
-      Result := Result xor (Result shr r);
+      Result := Result xor (Result shr SH_AMNT_16);
     end;
   end;
 
   Result := Result * m;
-  Result := Result xor (Result shr 10);
+  Result := Result xor (Result shr SH_AMNT_10);
   Result := Result * m;
-  Result := Result xor (Result shr 17);
+  Result := Result xor (Result shr SH_AMNT_17);
 end;
 
 { TMurMur2 }
@@ -283,7 +294,6 @@ class function TMurMur2.Hash(const Key; KeyLen: UInt32; const Seed: UInt32): UIn
 // 'm' and 'r' are mixing constants generated offline. They're not really 'magic', they just happen to work well.
 const
   m: UInt32 = $5bd1e995;
-  r: UInt32 = 24;
 var
   k:      UInt32;
   data:   PByteArray;
@@ -300,7 +310,7 @@ begin
   begin
     k := PUInt32(@(data[i]))^;
 
-    mmix(Result, k, m, r);
+    mmix(Result, k, m, SH_AMNT_24);
 
     Inc(i, 4);
     Dec(len, 4);
@@ -309,9 +319,9 @@ begin
   // Handle the last few bytes of the input array
   case len of
     3:
-      Result := Result xor data[i + 2] shl 16;
+      Result := Result xor data[i + 2] shl SH_AMNT_16;
     2:
-      Result := Result xor data[i + 1] shl 8;
+      Result := Result xor data[i + 1] shl SH_AMNT_8;
     1:
     begin
       Result := Result xor data[i];
@@ -320,9 +330,9 @@ begin
   end;
 
   // Do a few final mixes of the hash to ensure the last few bytes are well-incorporated.
-  Result := Result xor (Result shr 13);
+  Result := Result xor (Result shr SH_AMNT_13);
   Result := Result * m;
-  Result := Result xor (Result shr 15);
+  Result := Result xor (Result shr SH_AMNT_15);
 end;
 
 {------------------------------------------------------------------------------
@@ -339,7 +349,6 @@ end;
 class function TMurMur2.HashA(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
 const
   m: UInt32 = $5bd1e995;
-  r: UInt32 = 24;
 var
   k, l, t: UInt32;
   data:    PByteArray;
@@ -355,7 +364,7 @@ begin
   begin
     k := PUInt32(@(data[i]))^;
 
-    mmix(Result, k, m, r);
+    mmix(Result, k, m, SH_AMNT_24);
 
     Inc(i, 4);
     Dec(len, 4);
@@ -365,19 +374,19 @@ begin
 
   case len of
     3:
-      t := t xor (data[i + 2] shl 16);
+      t := t xor (data[i + 2] shl SH_AMNT_16);
     2:
-      t := t xor (data[i + 1] shl 8);
+      t := t xor (data[i + 1] shl SH_AMNT_8);
     1:
       t := t xor data[i];
   end;
 
-  mmix(Result, t, m, r);
-  mmix(Result, l, m, r);
+  mmix(Result, t, m, SH_AMNT_24);
+  mmix(Result, l, m, SH_AMNT_24);
 
-  Result := Result xor (Result shr 13);
+  Result := Result xor (Result shr SH_AMNT_13);
   Result := Result * m;
-  Result := Result xor (Result shr 15);
+  Result := Result xor (Result shr SH_AMNT_15);
 end;
 
 {------------------------------------------------------------------------------
@@ -392,7 +401,6 @@ end;
 class function TMurMur2.Hash64A(const Key; KeyLen: UInt32; const Seed: UInt64): UInt64;
 const
   m: UInt64 = $c6a4a7935bd1e995;
-  r: UInt32 = 47;
 var
   k:      UInt64;
   data:   PByteArray;
@@ -408,7 +416,7 @@ begin
     k := PUInt64(@(data[i]))^;
 
     k := k * m;
-    k := k xor (k shr r);
+    k := k xor (k shr SH_AMNT_47);
     k := k * m;
 
     Result := Result xor k;
@@ -424,13 +432,13 @@ begin
     6:
       Result := Result xor (UInt64(data[i + 5]) shl 40);
     5:
-      Result := Result xor (UInt64(data[i + 4]) shl 32);
+      Result := Result xor (UInt64(data[i + 4]) shl SH_AMNT_32);
     4:
-      Result := Result xor (UInt64(data[i + 3]) shl 24);
+      Result := Result xor (UInt64(data[i + 3]) shl SH_AMNT_24);
     3:
-      Result := Result xor (UInt64(data[i + 2]) shl 16);
+      Result := Result xor (UInt64(data[i + 2]) shl SH_AMNT_16);
     2:
-      Result := Result xor (UInt64(data[i + 1]) shl 8);
+      Result := Result xor (UInt64(data[i + 1]) shl SH_AMNT_8);
     1:
     begin
       Result := Result xor UInt64(data[i]);
@@ -438,9 +446,9 @@ begin
     end;
   end;
 
-  Result := Result xor (Result shr r);
+  Result := Result xor (Result shr SH_AMNT_47);
   Result := Result * m;
-  Result := Result xor (Result shr r);
+  Result := Result xor (Result shr SH_AMNT_47);
 end;
 
 // 64-bit hash for 32-bit platforms
@@ -448,14 +456,13 @@ end;
 class function TMurMur2.Hash64B(const Key; KeyLen: UInt32; const Seed: UInt64): UInt64;
 const
   m: UInt32 = $5bd1e995;
-  r: UInt32 = 24;
 var
   h1, h2, k1, k2: UInt32;
   data:           PByteArray;
   i, len:         Integer;
 begin
   h1   := UInt32(Seed) xor KeyLen;
-  h2   := UInt32(Seed shr 32);
+  h2   := UInt32(Seed shr SH_AMNT_32);
   data := PByteArray(@Key);
   len  := KeyLen;
   i    := 0;
@@ -464,7 +471,7 @@ begin
   begin
     k1 := PUInt32(@(data[i]))^;
     k1 := k1 * m;
-    k1 := k1 * (k1 shr r);
+    k1 := k1 * (k1 shr SH_AMNT_24);
     k1 := k1 * m;
     h1 := h1 * m;
     h1 := h1 xor k1;
@@ -473,7 +480,7 @@ begin
 
     k2 := PUInt32(@(data[i]))^;
     k2 := k2 * m;
-    k2 := k2 xor (k2 shr r);
+    k2 := k2 xor (k2 shr SH_AMNT_24);
     k2 := k2 * m;
     h2 := h2 * m;
     h2 := h2 xor k2;
@@ -485,7 +492,7 @@ begin
   begin
     k1 := PUInt32(@(data[i]))^;
     k1 := k1 * m;
-    k1 := k1 xor (k1 shr r);
+    k1 := k1 xor (k1 shr SH_AMNT_24);
     k1 := k1 * m;
     h1 := h1 * m;
     h1 := h1 xor k1;
@@ -495,9 +502,9 @@ begin
 
   case len of
     3:
-      h2 := h2 xor (data[i + 2] shl 16);
+      h2 := h2 xor (data[i + 2] shl SH_AMNT_16);
     2:
-      h2 := h2 xor (data[i + 1] shl 8);
+      h2 := h2 xor (data[i + 1] shl SH_AMNT_8);
     1:
     begin
       h2 := h2 xor data[i];
@@ -509,13 +516,13 @@ begin
   h1 := h1 * m;
   h2 := h2 xor (h1 shr 22);
   h2 := h2 * m;
-  h1 := h1 xor (h2 shr 17);
+  h1 := h1 xor (h2 shr SH_AMNT_17);
   h1 := h1 * m;
   h2 := h2 xor (h1 shr 19);
   h2 := h2 * m;
 
   Result := h1;
-  Result := (Result shl 32) or h2;
+  Result := (Result shl SH_AMNT_32) or h2;
 end;
 
 {------------------------------------------------------------------------------
@@ -527,7 +534,6 @@ end;
 class function TMurMur2.HashNeutral(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
 const
   m: UInt32 = $5bd1e995;
-  r: UInt32 = 24;
 var
   k:      UInt32;
   data:   PByteArray;
@@ -541,12 +547,12 @@ begin
   while len >= 4 do
   begin
     k := data[i];
-    k := k or (data[i + 1] shl 8);
-    k := k or (data[i + 2] shl 16);
-    k := k or (data[i + 3] shl 24);
+    k := k or (data[i + 1] shl SH_AMNT_8);
+    k := k or (data[i + 2] shl SH_AMNT_16);
+    k := k or (data[i + 3] shl SH_AMNT_24);
 
     k := k * m;
-    k := k xor (k shr r);
+    k := k xor (k shr SH_AMNT_24);
     k := k * m;
 
     Result := Result * m;
@@ -558,9 +564,9 @@ begin
 
   case len of
     3:
-      Result := Result xor data[i + 2] shl 16;
+      Result := Result xor data[i + 2] shl SH_AMNT_16;
     2:
-      Result := Result xor data[i + 1] shl 8;
+      Result := Result xor data[i + 1] shl SH_AMNT_8;
     1:
     begin
       Result := Result xor data[i];
@@ -568,9 +574,9 @@ begin
     end;
   end;
 
-  Result := Result xor (Result shr 13);
+  Result := Result xor (Result shr SH_AMNT_13);
   Result := Result * m;
-  Result := Result xor (Result shr 15);
+  Result := Result xor (Result shr SH_AMNT_15);
 end;
 
 {------------------------------------------------------------------------------
@@ -582,134 +588,149 @@ end;
   Performance will be lower than TMurMur2.Hash
 }
 class function TMurMur2.HashAligned(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
-// MIX(h,k,m) { k *= m; k ^= k >> r; k *= m; h *= m; h ^= k; }
+  procedure MIX(var h, k: UInt32; m: UInt32); inline;
+  begin
+    k := k * m;
+    k := k xor (k shr SH_AMNT_24);
+    k := k * m;
+    h := h * m;
+    h := h xor k;
+  end;
+const
+  m: UInt32 = $5bd1e995;
+var
+  k, t, d:               UInt32;
+  data:                  PByteArray;
+  i, len, align, sl, sr: Integer;
 begin
-(*
-const uint32_t m = 0x5bd1e995;
-  const int r = 24;
+  Result := Seed xor KeyLen;
+  data   := PByteArray(@Key);
+  len    := KeyLen;
+  i      := 0;
+  align  := UInt64(data[i]) and 3;
 
-  const unsigned char * data = (const unsigned char * )key;
-
-  uint32_t h = seed ^ len;
-
-  int align = (uint64_t)data & 3;
-
-  if(align && (len >= 4))
-  {
+  if (align > 0) and (len >= 4) then
+  begin
     // Pre-load the temp registers
+    t := 0;
+    d := 0;
 
-    uint32_t t = 0, d = 0;
+    case align of
+      1:
+        t := t or (data[2] shl SH_AMNT_16);
+      2:
+        t := t or (data[1] shl SH_AMNT_8);
+      3:
+        t := t or data[0];
+    end;
 
-    switch(align)
-    {
-      case 1: t |= data[2] << 16;
-      case 2: t |= data[1] << 8;
-      case 3: t |= data[0];
-    }
+    t := t shl (SH_AMNT_8 * align);
 
-    t <<= (8 * align);
+    Inc(i, 4 - align);
+    Dec(len, 4 - align);
 
-    data += 4-align;
-    len -= 4-align;
-
-    int sl = 8 * (4-align);
-    int sr = 8 * align;
+    sl := SH_AMNT_8 * (4 - align);
+    sr := SH_AMNT_8 * align;
 
     // Mix
+    while len >= 4 do
+    begin
+      d := PUInt32(@(data[i]))^;
+      t := (t shr sr) or (d shl sl);
 
-    while(len >= 4)
-    {
-      d = *(uint32_t * )data;
-      t = (t >> sr) | (d << sl);
+      k := t;
 
-      uint32_t k = t;
+      MIX(Result, k, m);
 
-      MIX(h,k,m);
+      t := d;
 
-      t = d;
-
-      data += 4;
-      len -= 4;
-    }
+      Inc(i, 4);
+      Dec(len, 4);
+    end;
 
     // Handle leftover data in temp registers
+    d := 0;
 
-    d = 0;
+    if(len >= align) then
+    begin
+      case align of
+        3:
+          d := d or (data[i + 2] shl SH_AMNT_16);
+        2:
+          d := d or (data[i + 1] shl SH_AMNT_8);
+        1:
+          d := d or data[i];
+      end;
 
-    if(len >= align)
-    {
-      switch(align)
-      {
-      case 3: d |= data[2] << 16;
-      case 2: d |= data[1] << 8;
-      case 1: d |= data[0];
-      }
+      k := (t shr sr) or (d shl sl);
+      MIX(Result, k, m);
 
-      uint32_t k = (t >> sr) | (d << sl);
-      MIX(h,k,m);
-
-      data += align;
-      len -= align;
+      Inc(i, align);
+      Dec(len, align);
 
       //----------
       // Handle tail bytes
+      case len of
+        3:
+          Result := Result xor (data[i + 2] shl SH_AMNT_16);
+        2:
+          Result := Result xor (data[i + 1] shl SH_AMNT_8);
+        1:
+        begin
+          Result := Result xor data[i];
+          Result := Result * m;
+        end;
+      end;
+    end else
+    begin
+      case len of
+        3:
+          d := d or (data[i + 2] shl SH_AMNT_16);
+        2:
+          d := d or (data[i + 1] shl SH_AMNT_8);
+        1:
+          d := d or data[i];
+        0:
+        begin
+          Result := Result xor (t shr sr) or (d shl sl);
+          Result := Result * m;
+        end;
+      end;
+    end;
 
-      switch(len)
-      {
-      case 3: h ^= data[2] << 16;
-      case 2: h ^= data[1] << 8;
-      case 1: h ^= data[0];
-          h *= m;
-      };
-    }
-    else
-    {
-      switch(len)
-      {
-      case 3: d |= data[2] << 16;
-      case 2: d |= data[1] << 8;
-      case 1: d |= data[0];
-      case 0: h ^= (t >> sr) | (d << sl);
-          h *= m;
-      }
-    }
+    Result := Result xor (Result shr SH_AMNT_13);
+    Result := Result * m;
+    Result := Result xor (Result shr SH_AMNT_15);
+  end else
+  begin
+    while len >= 4 do
+    begin
+      k := PUInt32(@(data[i]))^;
 
-    h ^= h >> 13;
-    h *= m;
-    h ^= h >> 15;
+      MIX(Result, k, m);
 
-    return h;
-  }
-  else
-  {
-    while(len >= 4)
-    {
-      uint32_t k = *(uint32_t * )data;
-
-      MIX(h,k,m);
-
-      data += 4;
-      len -= 4;
-    }
+      Inc(i, 4);
+      Dec(len, 4);
+    end;
 
     //----------
     // Handle tail bytes
+    case len of
+      3:
+        Result := Result xor (data[i + 2] shl SH_AMNT_16);
+      2:
+        Result := Result xor (data[i + 1] shl SH_AMNT_8);
+      1:
+      begin
+        Result := Result xor data[i];
+        Result := Result * m;
+      end;
+    end;
 
-    switch(len)
-    {
-    case 3: h ^= data[2] << 16;
-    case 2: h ^= data[1] << 8;
-    case 1: h ^= data[0];
-        h *= m;
-    };
-
-    h ^= h >> 13;
-    h *= m;
-    h ^= h >> 15;
-
-    return h;
-  }
-*)
+    Result := Result xor (Result shr SH_AMNT_13);
+    Result := Result * m;
+    Result := Result xor (Result shr SH_AMNT_15);
+  end;
 end;
 
 { TMurMur3 }
