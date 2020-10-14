@@ -62,7 +62,7 @@ type
     const
       m: UInt32 = $5bd1e995;
       r: UInt32 = 24;
-    procedure MixTail(var data: PByteArray; var dataLen, idx: Integer);
+    procedure MixTail(const data: PByteArray; var dataLen: UInt32; var idx: Integer);
   public
     class function Hash(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
     class function HashA(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
@@ -78,7 +78,7 @@ type
 
   TMurMur3 = class
   public
-    class procedure Hash_x86_32(const Key; KeyLen: UInt32; const Seed: UInt32; OutVal: Pointer);
+    class function Hash_x86_32(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
     class procedure Hash_x86_128(const Key; KeyLen: UInt32; const Seed: UInt32; OutVal: Pointer);
     class procedure Hash_x64_128(const Key; KeyLen: UInt32; const Seed: UInt32; OutVal: Pointer);
     class function Hash(const Key; KeyLen: UInt32; const Seed: UInt32): UInt64;
@@ -769,10 +769,10 @@ end;
 
 constructor TMurMur2.Create(Seed: UInt32);
 begin
-  fHash  = Seed;
-  fTail  = 0;
-  fCount = 0;
-  fSize  = 0;
+  fHash  := Seed;
+  fTail  := 0;
+  fCount := 0;
+  fSize  := 0;
 end;
 
 procedure TMurMur2.Add(const value; dataLen: UInt32);
@@ -785,11 +785,11 @@ begin
   len   := dataLen;
   data  := PByteArray(@value);
 
-  MixTail(data, len);
+  MixTail(data, len, i);
 
   while len >= 4 do
   begin
-    k = PUInt32(@(data[i]))^;
+    k := PUInt32(@(data[i]))^;
 
     mmix(fHash, k, m, r);
 
@@ -797,7 +797,7 @@ begin
     Dec(dataLen, 4);
   end;
 
-  MixTail(data, len);
+  MixTail(data, len, i);
 end;
 
 function TMurMur2.Calculate: UInt32;
@@ -812,7 +812,7 @@ begin
   Result := fHash;
 end;
 
-procedure TMurMur2.MixTail(const data: PByteArray; var dataLen, idx: Integer);
+procedure TMurMur2.MixTail(const data: PByteArray; var dataLen: UInt32; var idx: Integer);
 begin
   while (dataLen > 0) and ((dataLen < 4) or (fCount > 0)) do
   begin
@@ -834,59 +834,62 @@ end;
 // https://github.com/rurban/smhasher/blob/master/MurmurHash3.cpp
 //-----------------------------------------------------------------------------
 // objsize: 0x0-0x15f: 351
-class procedure TMurMur3.Hash_x86_32(const Key; KeyLen: UInt32; const Seed: UInt32; OutVal: Pointer);
+class function TMurMur3.Hash_x86_32(const Key; KeyLen: UInt32; const Seed: UInt32): UInt32;
+const
+  c1: UInt32 = $cc9e2d51;
+  c2: UInt32 = $1b873593;
+var
+  data:       PByteArray;
+  blocks:     PUInt32Array;
+  i, nBlocks: Integer;
+  len, k1:    UInt32;
 begin
-(*
-  const uint8_t * data = (const uint8_t* )key;
-  const int nblocks = len / 4;
-
-  uint32_t h1 = seed;
-
-  const uint32_t c1 = 0xcc9e2d51;
-  const uint32_t c2 = 0x1b873593;
+  len     := KeyLen;
+  data    := PByteArray(@Key);
+  nblocks := Math.Floor(len / 4);
+  Result  := Seed;
 
   //----------
   // body
+  blocks := PUInt32Array(data);
 
-  const uint32_t * blocks = (const uint32_t * )(data + nblocks*4);
+  for i := 0 to nblocks - 1 do
+  begin
+    k1 := getblock32(blocks, i);
 
-  for(int i = -nblocks; i; i++)
-  {
-    uint32_t k1 = getblock32(blocks,i);
+    k1 := k1 * c1;
+    k1 := ROTL32(k1, SH_AMNT_15);
+    k1 := k1 * c2;
 
-    k1 *= c1;
-    k1 = ROTL32(k1,15);
-    k1 *= c2;
-
-    h1 ^= k1;
-    h1 = ROTL32(h1,13);
-    h1 = h1*5+0xe6546b64;
-  }
+    Result := Result xor k1;
+    Result := ROTL32(Result, SH_AMNT_13);
+    Result := Result * 5 + $e6546b64;
+  end;
 
   //----------
   // tail
+  i  := nblocks * 4;
+  k1 := 0;
 
-  const uint8_t * tail = (const uint8_t* )(data + nblocks*4);
-
-  uint32_t k1 = 0;
-
-  switch(len & 3)
-  {
-  case 3: k1 ^= tail[2] << 16;
-  case 2: k1 ^= tail[1] << 8;
-  case 1: k1 ^= tail[0];
-          k1 *= c1; k1 = ROTL32(k1,15); k1 *= c2; h1 ^= k1;
-  };
+  case len and 3 of
+    3:
+      k1 := k1 xor (data[i + 2] shl SH_AMNT_16);
+    2:
+      k1 := k1 xor (data[i + 1] shl SH_AMNT_8);
+    1:
+    begin
+      k1     := k1 xor data[i];
+      k1     := k1 * c1;
+      k1     := ROTL32(k1, SH_AMNT_15);
+      k1     := k1 * c2;
+      Result := Result xor k1;
+    end;
+  end;
 
   //----------
   // finalization
-
-  h1 ^= len;
-
-  h1 = fmix32(h1);
-
-  *(uint32_t* )out = h1;
-*)
+  Result := Result xor len;
+  Result := fmix32(Result);
 end;
 
 //-----------------------------------------------------------------------------

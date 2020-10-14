@@ -14,9 +14,11 @@ type
     [TestCase('Canonical MurMur1 Hash', '')]
 		procedure SelfTest_Canonical_MurMur_Three_Hash;
     [TestCase('32-bit Test Vectors', '')]
-		procedure SelfTest_MurMur_Three_x86_TestVectors;
-    [TestCase('64-bit Test Vectors', '')]
-		procedure SelfTest_MurMur_Three_x64_TestVectors;
+		procedure SelfTest_MurMur_Three_32_x86_TestVectors;
+    [TestCase('128-bit hash 32-bit Test Vectors', '')]
+		procedure SelfTest_MurMur_Three_128_x86_TestVectors;
+    [TestCase('128-bit hash 64-bit Test Vectors', '')]
+		procedure SelfTest_MurMur_Three_128_x64_TestVectors;
 	end;
 
 implementation
@@ -103,21 +105,21 @@ begin
   Assert.AreEqual(Expected, Actual); // testcode
 end;
 
-procedure TMurMur3Tests.SelfTest_MurMur_Three_x86_TestVectors;
+procedure TMurMur3Tests.SelfTest_MurMur_Three_32_x86_TestVectors;
 var
 	ws: string;
 	t1, t2: Int64;
 
 	procedure t(const KeyHexString: string; Seed: Cardinal; Expected: Cardinal);
 	var
-		actual: LongWord;
+		actual: UInt32;
 		key:    TByteDynArray;
 	begin
 		key := HexStringToBytes(KeyHexString);
 
 		if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		TMurmur3.Hash_x86_128(Pointer(key)^, Length(Key), Seed, @actual);
+		actual := TMurmur3.Hash_x86_32(Pointer(key)^, Length(Key), Seed);
 
 		if not QueryPerformanceCounter(t2) then t2 := 0;
 
@@ -131,13 +133,13 @@ var
 
 	procedure TestString(const Value: string; Seed: Cardinal; Expected: Cardinal);
 	var
-		actual:    LongWord;
+		actual:    UInt32;
 		i:         Integer;
 		safeValue: string;
 	begin
 		if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		TMurmur3.Hash_x86_128(Pointer(Value)^, Length(Value) * SizeOf(WideChar), Seed, @actual);
+		actual := TMurmur3.Hash_x86_32(Pointer(Value)^, Length(Value) * SizeOf(WideChar), Seed);
 
 		if not QueryPerformanceCounter(t2) then t2 := 0;
 
@@ -251,7 +253,155 @@ begin
 	TestString(StringOfChar('U', 1005), 0, 2111496562);
 end;
 
-procedure TMurMur3Tests.SelfTest_MurMur_Three_x64_TestVectors;
+procedure TMurMur3Tests.SelfTest_MurMur_Three_128_x86_TestVectors;
+var
+	ws: string;
+	t1, t2: Int64;
+
+	procedure t(const KeyHexString: string; Seed: Cardinal; Expected: Cardinal);
+	var
+		actual: LongWord;
+		key:    TByteDynArray;
+	begin
+		key := HexStringToBytes(KeyHexString);
+
+		if not QueryPerformanceCounter(t1) then t1 := 0;
+
+		TMurmur3.Hash_x86_128(Pointer(key)^, Length(Key), Seed, @actual);
+
+		if not QueryPerformanceCounter(t2) then t2 := 0;
+
+    WriteLn(
+      'Expected = ' + UIntToStr(Expected) + ' (0x' + IntToHex(Expected) +
+      ') ; Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')'
+    );
+		Status('MurMur > Hashed ' + KeyHexString + ' in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+		Assert.AreEqual(Expected, actual, Format('Key: %s. Seed: 0x%.8x', [KeyHexString, Seed]));
+	end;
+
+	procedure TestString(const Value: string; Seed: Cardinal; Expected: Cardinal);
+	var
+		actual:    LongWord;
+		i:         Integer;
+		safeValue: string;
+	begin
+		if not QueryPerformanceCounter(t1) then t1 := 0;
+
+		TMurmur3.Hash_x86_128(Pointer(Value)^, Length(Value) * SizeOf(WideChar), Seed, @actual);
+
+		if not QueryPerformanceCounter(t2) then t2 := 0;
+
+		//Replace #0 with '#0'. Delphi's StringReplace is unable to replace strings, so we shall do it ourselves
+		safeValue := '';
+
+		for i := 1 to Length(Value) do
+		begin
+			if Value[i] = #0 then
+				safeValue := safeValue + '#0'
+			else
+				safeValue := safeValue + Value[i];
+		end;
+
+    WriteLn(
+      'Expected = ' + UIntToStr(Expected) + ' (0x' + IntToHex(Expected) +
+      ') ; Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')'
+    );
+		Status('MurMur > Hashed "' + safeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+		Assert.AreEqual(Expected, actual, Format('Key: %s. Seed: 0x%.8x', [safeValue, Seed]));
+	end;
+const
+	n: string = ''; //n=nothing.
+			//Work around bug in older versions of Delphi compiler when building WideStrings
+			//http://stackoverflow.com/a/7031942/12597
+
+begin
+	t('',                    0,         0); //with zero data and zero seed; everything becomes zero
+	t('',                    1, $514E28B7); //ignores nearly all the math
+
+	t('',            $FFFFFFFF, $7A3F4F7E); //Make sure your seed is using unsigned math
+	t('FF FF FF FF',         0, $219738A7); //Make sure your 4-byte chunks are using unsigned math
+	t('21 43 65 87',         0, $2D0F8B30); //Endian order. UInt32 should end up as 0x87654321
+	t('21 43 65 87', $5082EDEE, $794998F3); //Seed value eliminates initial key with xor
+
+	t(   '21 43 65',         0, $C82D0141); //Only three bytes. Should end up as 0x654321
+	t(      '21 43',         0, $5F66FF1E); //Only two bytes. Should end up as 0x4321
+	t(         '21',         0, $2940649F); //Only one bytes. Should end up as 0x21
+
+	t('00 00 00 00',         0, $EB4ED66A); //Zero dword eliminiates almost all math. Make sure you don't mess up the pointers and it ends up as null
+	t(   '00 00 00',         0, $1E460534); //Only three bytes. Should end up as 0.
+	t(      '00 00',         0, $333C11F9); //Only two bytes. Should end up as 0.
+	t(         '00',         0, $8837CF3E); //Only one bytes. Should end up as 0.
+
+
+	//Easier to test strings. All strings are assumed to be UTF-8 encoded and do not include any null terminator
+	TestString('',       0,         0); //empty string with zero seed should give zero
+	TestString('',       1,         $8F5A8D63);
+	TestString('',       $ffffffff, $7A3F4F7E); //make sure seed value handled unsigned
+	TestString(#0#0#0#0, 0,         $1FC6945B); //we handle embedded nulls
+
+	TestString('aaaa', $9747b28c, $E3A2199B); //one full chunk
+	TestString('a',    $9747b28c, $C0F5DF3D); //one character
+	TestString('aa',   $9747b28c, $8D43FC88); //two characters
+	TestString('aaa',  $9747b28c, $E9B4440B); //three characters
+
+	//Endian order within the chunks
+	TestString('abcd', $9747b28c, $A78F9530); //one full chunk
+	TestString('a',    $9747b28c, $C0F5DF3D);
+	TestString('ab',   $9747b28c, $CF9066BA);
+	TestString('abc',  $9747b28c, $B089705D);
+
+	TestString('Hello, world!', $9747b28c, $6279B6C7);
+
+	//we build it up this way to workaround a bug in older versions of Delphi that were unable to build WideStrings correctly
+	ws := n + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0; //U+03C0: Greek Small Letter Pi
+	TestString(ws, $9747b28c, $96115734); //Unicode handling and conversion to UTF-8
+
+	{
+		String of 256 characters.
+		Make sure you don't store string lengths in a char, and overflow at 255.
+		OpenBSD's canonical implementation of BCrypt made this mistake
+	}
+	ws := StringOfChar('a', 256);
+	TestString(ws, $9747b28c, $45F03BEF);
+
+
+	//The test vector that you'll see out there for Murmur
+	TestString('The quick brown fox jumps over the lazy dog', $9747b28c, $025A8B4A);
+
+
+	//The SHA2 test vectors
+	TestString('abc', 0, $998E3B72);
+	TestString('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 0, $CD4252FF);
+
+	//#1) 1 byte 0xbd
+	t('bd', 0, $BAC6BDB1);
+
+	//#2) 4 bytes 0xc98c8e55
+	t('55 8e 8c c9', 0, $F674766B);
+
+	//#3) 55 bytes of zeros (ASCII character 55)
+	TestString(StringOfChar('0', 55), 0, 1699016170);
+
+	//#4) 56 bytes of zeros
+	TestString(StringOfChar('0', 56), 0, 2793276253);
+
+	//#5) 57 bytes of zeros
+	TestString(StringOfChar('0', 57), 0, 2785633196);
+
+	//#6) 64 bytes of zeros
+	TestString(StringOfChar('0', 64), 0, 1294100748);
+
+	//#7) 1000 bytes of zeros
+	TestString(StringOfChar('0', 1000), 0, 729562938);
+
+	//#8) 1000 bytes of 0x41 ‘A’
+	TestString(StringOfChar('A', 1000), 0, 66908384);
+
+	//#9) 1005 bytes of 0x55 ‘U’
+	TestString(StringOfChar('U', 1005), 0, 2111496562);
+end;
+
+procedure TMurMur3Tests.SelfTest_MurMur_Three_128_x64_TestVectors;
 var
 	ws: string;
 	t1, t2: Int64;

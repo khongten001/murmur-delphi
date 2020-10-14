@@ -105,7 +105,7 @@ end;
 
 procedure TMurMur2Tests.SelfTest_Canonical_MurMur_Two_HashAligned;
 const
-  Expected: Cardinal = {$IFDEF CPUX64}$A3B43F24{$ELSE}$0019F9E4{$ENDIF};
+  Expected: Cardinal = $43EB7AAD;
 var
 	key:    array[0..255] of Byte;     //256 hashes
 	hashes: array[0..256] of Cardinal; //result of each of the 256 hashes

@@ -6,7 +6,7 @@
         <MainSource>MurMur_Delphi_Tests.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Console</AppType>
     </PropertyGroup>
@@ -151,8 +151,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="MurMurHash.pas"/>
-        <DCCReference Include="MurMurHash1Tests.pas"/>
-        <DCCReference Include="MurMurHash2Tests.pas"/>
+        <DCCReference Include="MurMurHash3Tests.pas"/>
         <DCCReference Include="MurMurHashVsTests.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
