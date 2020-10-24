@@ -1,25 +1,25 @@
 ﻿unit MurMurHashVsTests;
 interface
 uses
-	DUnitX.TestFramework, SysUtils, MurMurHash;
+  DUnitX.TestFramework, SysUtils, MurMurHash;
 
 type
   [TestFixture]
-	TMurMurVsTests = class(TObject)
-	protected
-		fFreq: Int64;
-	public
+  TMurMurVsTests = class(TObject)
+  protected
+    fFreq: Int64;
+  public
     [Setup]
-		procedure SetUp;
+    procedure SetUp;
     [TearDown]
-		procedure TearDown;
+    procedure TearDown;
     [TestCase('Life-like Test Vectors', '')]
-		procedure SelfTest_MurMur_One_LifeLike_TestVectors;
-	end;
+    procedure SelfTest_MurMur_One_LifeLike_TestVectors;
+  end;
 
 implementation
 uses
-	Types, Windows, System.Hash;
+  Types, Windows, System.Hash;
 
 function Adler32CRC(TextPointer: Pointer; TextLength: Cardinal): Cardinal;
 var
@@ -43,121 +43,121 @@ end;
 
 procedure TMurMurVsTests.SelfTest_MurMur_One_LifeLike_TestVectors;
 var
-	t1, t2: Int64;
+  t1, t2: Int64;
 
-	procedure TestStringBobJenkins(const Value, SafeValue: string);
+  procedure TestStringBobJenkins(const Value, SafeValue: string);
   var
     actual: Integer;
-	begin
-		if not QueryPerformanceCounter(t1) then t1 := 0;
+  begin
+    if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		actual := THashBobJenkins.GetHashValue(Value);
+    actual := THashBobJenkins.GetHashValue(Value);
 
-		if not QueryPerformanceCounter(t2) then t2 := 0;
+    if not QueryPerformanceCounter(t2) then t2 := 0;
 
     WriteLn('Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')');
-		Status('BobJenkins > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
-	end;
+    Status('BobJenkins > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+  end;
 
-	procedure TestStringAdler32CRC(const Value, SafeValue: string);
+  procedure TestStringAdler32CRC(const Value, SafeValue: string);
   var
     actual: Cardinal;
-	begin
-		if not QueryPerformanceCounter(t1) then t1 := 0;
+  begin
+    if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		actual := Adler32CRC(PChar(Value), Length(Value) * SizeOf(Char));
+    actual := Adler32CRC(PChar(Value), Length(Value) * SizeOf(Char));
 
-		if not QueryPerformanceCounter(t2) then t2 := 0;
+    if not QueryPerformanceCounter(t2) then t2 := 0;
 
     WriteLn('Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')');
-		Status('Adler32CRC > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
-	end;
+    Status('Adler32CRC > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+  end;
 
-	procedure TestStringMurMur3(const Value, SafeValue: string; Seed: Cardinal);
+  procedure TestStringMurMur3(const Value, SafeValue: string; Seed: Cardinal);
   var
-    actual: UInt64;
-	begin
-		if not QueryPerformanceCounter(t1) then t1 := 0;
+    actual: string;
+  begin
+    if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		actual := TMurmur3.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+    actual := TMurmur3.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
 
-		if not QueryPerformanceCounter(t2) then t2 := 0;
+    if not QueryPerformanceCounter(t2) then t2 := 0;
 
-    WriteLn('Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')');
-		Status('MurMur3.Hash > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
-	end;
+    WriteLn('Actual = ' + actual);
+    Status('MurMur3.Hash > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+  end;
 
-	procedure TestStringMurMur2(const Value, SafeValue: string; Seed: Cardinal);
+  procedure TestStringMurMur2(const Value, SafeValue: string; Seed: Cardinal);
   var
     actual: UInt32;
     actual64: UInt64;
-	begin
-		if not QueryPerformanceCounter(t1) then t1 := 0;
+  begin
+    if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		actual := TMurmur2.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+    actual := TMurmur2.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
 
-		if not QueryPerformanceCounter(t2) then t2 := 0;
-
-    WriteLn('Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')');
-		Status('MurMur2.Hash > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
-
-		if not QueryPerformanceCounter(t1) then t1 := 0;
-
-		actual := TMurmur2.HashA(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
-
-		if not QueryPerformanceCounter(t2) then t2 := 0;
+    if not QueryPerformanceCounter(t2) then t2 := 0;
 
     WriteLn('Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')');
-		Status('MurMur2.HashA > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+    Status('MurMur2.Hash > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
 
-		if not QueryPerformanceCounter(t1) then t1 := 0;
+    if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		actual64 := TMurmur2.Hash64A(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+    actual := TMurmur2.HashA(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
 
-		if not QueryPerformanceCounter(t2) then t2 := 0;
+    if not QueryPerformanceCounter(t2) then t2 := 0;
+
+    WriteLn('Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')');
+    Status('MurMur2.HashA > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+
+    if not QueryPerformanceCounter(t1) then t1 := 0;
+
+    actual64 := TMurmur2.Hash64A(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+
+    if not QueryPerformanceCounter(t2) then t2 := 0;
 
     WriteLn('Actual64 = ' + UIntToStr(actual64) + ' (0x' + IntToHex(actual64) + ')');
-		Status('MurMur2.Hash64A > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+    Status('MurMur2.Hash64A > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
 
-		if not QueryPerformanceCounter(t1) then t1 := 0;
+    if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		actual64 := TMurmur2.Hash64B(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+    actual64 := TMurmur2.Hash64B(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
 
-		if not QueryPerformanceCounter(t2) then t2 := 0;
+    if not QueryPerformanceCounter(t2) then t2 := 0;
 
     WriteLn('Actual64 = ' + UIntToStr(actual64) + ' (0x' + IntToHex(actual64) + ')');
-		Status('MurMur2.Hash64B > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
-	end;
+    Status('MurMur2.Hash64B > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+  end;
 
-	procedure TestStringMurMur1(const Value, SafeValue: string; Seed: Cardinal);
+  procedure TestStringMurMur1(const Value, SafeValue: string; Seed: Cardinal);
   var
     actual: UInt32;
-	begin
-		if not QueryPerformanceCounter(t1) then t1 := 0;
+  begin
+    if not QueryPerformanceCounter(t1) then t1 := 0;
 
-		actual := TMurmur1.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+    actual := TMurmur1.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
 
-		if not QueryPerformanceCounter(t2) then t2 := 0;
+    if not QueryPerformanceCounter(t2) then t2 := 0;
 
     WriteLn('Actual = ' + UIntToStr(actual) + ' (0x' + IntToHex(actual) + ')');
-		Status('MurMur1.Hash > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
-	end;
+    Status('MurMur1.Hash > Hashed "' + SafeValue + '" in ' + FloatToStrF((t2 - t1) / fFreq * 1000000, ffFixed, 15, 3) + ' µs' + sLineBreak + sLineBreak);
+  end;
 
-	procedure TestString(const Value: string; Seed: Cardinal);
+  procedure TestString(const Value: string; Seed: Cardinal);
   var
-		safeValue: string;
-		I:         Integer;
+    safeValue: string;
+    I:         Integer;
   begin
-		//Replace #0 with '#0'. Delphi's StringReplace is unable to replace strings, so we shall do it ourselves
-		safeValue := '';
+    //Replace #0 with '#0'. Delphi's StringReplace is unable to replace strings, so we shall do it ourselves
+    safeValue := '';
 
-		for I := 1 to Length(Value) do
-		begin
-			if Value[I] = #0 then
-				safeValue := safeValue + '#0'
-			else
-				safeValue := safeValue + Value[I];
-		end;
+    for I := 1 to Length(Value) do
+    begin
+      if Value[I] = #0 then
+        safeValue := safeValue + '#0'
+      else
+        safeValue := safeValue + Value[I];
+    end;
 
     TestStringMurMur1(Value, safeValue, Seed);
     TestStringMurMur2(Value, safeValue, Seed);
@@ -310,15 +310,15 @@ const
                   'IEVkaXRvciBvZiAiS25pZ2h0cyBQcm92aW5jZS4gQWxwaGEgMTEuMSByOTA2NCAo' +
                   'MjAyMC0wNi0yNyAxMDo0OCkiICBvbiAxNS03LTIwMjAgMDk6Mjk6NTgNCg==';
 begin
-	TestString(FormatDateTime('yyyy/mm/dd hh:nn:ss.zzz', Now), $1a2b3c4d);
-	TestString('AcrossDesert', $1a2b3c4d);
-	TestString(BASIC_MAP_DAT, $1a2b3c4d);
+  TestString(FormatDateTime('yyyy/mm/dd hh:nn:ss.zzz', Now), $1a2b3c4d);
+  TestString('AcrossDesert', $1a2b3c4d);
+  TestString(BASIC_MAP_DAT, $1a2b3c4d);
 end;
 
 procedure TMurMurVsTests.SetUp;
 begin
-	if not QueryPerformanceFrequency(fFreq) then
-		fFreq := -1;
+  if not QueryPerformanceFrequency(fFreq) then
+    fFreq := -1;
 end;
 
 procedure TMurMurVsTests.TearDown;

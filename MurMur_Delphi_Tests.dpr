@@ -12,8 +12,8 @@ uses
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
   MurMurHash in 'MurMurHash.pas',
-  //MurMurHash1Tests in 'MurMurHash1Tests.pas',
-  //MurMurHash2Tests in 'MurMurHash2Tests.pas',
+  MurMurHash1Tests in 'MurMurHash1Tests.pas',
+  MurMurHash2Tests in 'MurMurHash2Tests.pas',
   MurMurHash3Tests in 'MurMurHash3Tests.pas',
   MurMurHashVsTests in 'MurMurHashVsTests.pas';
 
