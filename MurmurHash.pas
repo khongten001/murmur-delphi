@@ -1057,83 +1057,113 @@ end;
 //-----------------------------------------------------------------------------
 // objsize: 0x500-0x7bb: 699
 class function TMurMur3.Hash_x64_128(const Key; const KeyLen, Seed: UInt32): string;
+const
+  c1: UInt64 = $87c37b91114253d5;
+  c2: UInt64 = $4cf5ad432745937f;
+var
+  data:           PByteArray;
+  blocks:         PUInt64Array;
+  i, nBlocks:     Integer;
+  len,
+  h1, h2, k1, k2: UInt64;
 begin
-(*
-  const uint8_t * data = (const uint8_t* )key;
-  const int nblocks = len / 16;
-
-  uint64_t h1 = seed;
-  uint64_t h2 = seed;
-
-  const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
-  const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
+  len     := KeyLen;
+  data    := PByteArray(@Key);
+  nblocks := Math.Floor(len / 16);
+  h1      := Seed;
+  h2      := Seed;
 
   //----------
   // body
+  blocks := PUInt64Array(data);
 
-  const uint64_t * blocks = (const uint64_t * )(data);
+  for i := 0 to nblocks - 1 do
+  begin
+    k1 := getblock64(blocks, i * 2);
+    k2 := getblock64(blocks, i * 2 + 1);
 
-  for(int i = 0; i < nblocks; i++)
-  {
-    uint64_t k1 = getblock64(blocks,i*2+0);
-    uint64_t k2 = getblock64(blocks,i*2+1);
+    k1 := k1 * c1;
+    k1 := ROTL64(k1, 31);
+    k1 := k1 * c2;
+    h1 := h1 xor k1;
 
-    k1 *= c1; k1  = ROTL64(k1,31); k1 *= c2; h1 ^= k1;
+    h1 := ROTL64(h1, 27);
+    h1 := h1 + h2;
+    h1 := h1 * 5 + $52dce729;
 
-    h1 = ROTL64(h1,27); h1 += h2; h1 = h1*5+0x52dce729;
+    k2 := k2 * c2;
+    k2 := ROTL64(k2, 33);
+    k2 := k2 * c1;
+    h2 := h2 xor k2;
 
-    k2 *= c2; k2  = ROTL64(k2,33); k2 *= c1; h2 ^= k2;
-
-    h2 = ROTL64(h2,31); h2 += h1; h2 = h2*5+0x38495ab5;
-  }
+    h2 := ROTL64(h2, 31);
+    h2 := h2 + h1;
+    h2 := h2 * 5 + $38495ab5;
+  end;
 
   //----------
   // tail
+  i  := nblocks * 16;
+  k1 := 0;
+  k2 := 0;
 
-  const uint8_t * tail = (const uint8_t* )(data + nblocks*16);
-
-  uint64_t k1 = 0;
-  uint64_t k2 = 0;
-
-  switch(len & 15)
-  {
-  case 15: k2 ^= ((uint64_t)tail[14]) << 48;
-  case 14: k2 ^= ((uint64_t)tail[13]) << 40;
-  case 13: k2 ^= ((uint64_t)tail[12]) << 32;
-  case 12: k2 ^= ((uint64_t)tail[11]) << 24;
-  case 11: k2 ^= ((uint64_t)tail[10]) << 16;
-  case 10: k2 ^= ((uint64_t)tail[ 9]) << 8;
-  case  9: k2 ^= ((uint64_t)tail[ 8]) << 0;
-           k2 *= c2; k2  = ROTL64(k2,33); k2 *= c1; h2 ^= k2;
-
-  case  8: k1 ^= ((uint64_t)tail[ 7]) << 56;
-  case  7: k1 ^= ((uint64_t)tail[ 6]) << 48;
-  case  6: k1 ^= ((uint64_t)tail[ 5]) << 40;
-  case  5: k1 ^= ((uint64_t)tail[ 4]) << 32;
-  case  4: k1 ^= ((uint64_t)tail[ 3]) << 24;
-  case  3: k1 ^= ((uint64_t)tail[ 2]) << 16;
-  case  2: k1 ^= ((uint64_t)tail[ 1]) << 8;
-  case  1: k1 ^= ((uint64_t)tail[ 0]) << 0;
-           k1 *= c1; k1  = ROTL64(k1,31); k1 *= c2; h1 ^= k1;
-  };
+  case len and 15 of
+    15:
+      k2 := k2 xor (UInt64(data[i + 14]) shl 48);
+    14:
+      k2 := k2 xor (UInt64(data[i + 13]) shl 40);
+    13:
+      k2 := k2 xor (UInt64(data[i + 12]) shl 32);
+    12:
+      k2 := k2 xor (UInt64(data[i + 11]) shl 24);
+    11:
+      k2 := k2 xor (UInt64(data[i + 10]) shl 16);
+    10:
+      k2 := k2 xor (UInt64(data[i + 9]) shl 8);
+    9:
+    begin
+      k2 := k2 xor (UInt64(data[i + 8]) shl 0);
+      k2 := k2 * c2;
+      k2 := ROTL64(k2, 33);
+      k2 := k2 * c1;
+      h2 := h2 xor k2;
+    end;
+    8:
+      k1 := k1 xor (UInt64(data[i + 7]) shl 56);
+    7:
+      k1 := k1 xor (UInt64(data[i + 6]) shl 48);
+    6:
+      k1 := k1 xor (UInt64(data[i + 5]) shl 40);
+    5:
+      k1 := k1 xor (UInt64(data[i + 4]) shl 32);
+    4:
+      k1 := k1 xor (UInt64(data[i + 3]) shl 24);
+    3:
+      k1 := k1 xor (UInt64(data[i + 2]) shl 16);
+    2:
+      k1 := k1 xor (UInt64(data[i + 1]) shl 8);
+    1:
+    begin
+      k1 := k1 xor (UInt64(data[i + 0]) shl 0);
+      k1 := k1 * c1;
+      k1 := ROTL64(k1, 31);
+      k1 := k1 * c2;
+      h1 := h1 xor k1;
+    end;
+  end;
 
   //----------
   // finalization
-  h1 ^= len; h2 ^= len;
+  h1 := h1 xor len;
+  h2 := h2 xor len;
 
-  h1 += h2;
-  h2 += h1;
+  h1 := h1 + h2;
+  h2 := h2 + h1;
 
-  h1 = fmix64(h1);
-  h2 = fmix64(h2);
+  h1 := fmix64(h1);
+  h2 := fmix64(h2);
 
-  h1 += h2;
-  h2 += h1;
-
-  ((uint64_t* )out)[0] = h1;
-  ((uint64_t* )out)[1] = h2;
-  Result := IntToHex(aVal[0]) + IntToHex(aVal[1]);
-*)
+  Result := IntToHex(h1 + h2) + IntToHex(h2 + h1);
 end;
 
 class function TMurMur3.Hash(const Key; const KeyLen, Seed: UInt32): string;
