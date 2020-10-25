@@ -19,7 +19,7 @@ type
 
 implementation
 uses
-  Types, Windows, System.Hash;
+  Math, Types, Windows, System.Hash;
 
 function Adler32CRC(TextPointer: Pointer; TextLength: Cardinal): Cardinal;
 var
@@ -164,6 +164,96 @@ var
     TestStringMurMur3(Value, safeValue, Seed);
     TestStringAdler32CRC(Value, safeValue);
     TestStringBobJenkins(Value, safeValue);
+  end;
+
+  procedure TestStringAvg(const Value: string; Seed: Cardinal);
+  const
+    MAX_RUNS = 1000;
+  var
+    safeValue:    string;
+    I:            Integer;
+    scoresMm1,
+    scoresMm2,
+    scoresMm2A,
+    scoresMm264A,
+    scoresMm264B,
+    scoresMm3,
+    scoresCrc,
+    scoresBj:     array[0..MAX_RUNS - 1] of Double;
+  begin
+    //Replace #0 with '#0'. Delphi's StringReplace is unable to replace strings, so we shall do it ourselves
+    safeValue := '';
+
+    for I := 1 to Length(Value) do
+    begin
+      if Value[I] = #0 then
+        safeValue := safeValue + '#0'
+      else
+        safeValue := safeValue + Value[I];
+    end;
+
+    for I := 0 to MAX_RUNS - 1 do
+    begin
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      TMurmur1.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresMm1[I] := (t2 - t1) / fFreq * 1000000;
+
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      TMurmur2.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresMm2[I] := (t2 - t1) / fFreq * 1000000;
+
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      TMurmur2.HashA(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresMm2A[I] := (t2 - t1) / fFreq * 1000000;
+
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      TMurmur2.Hash64A(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresMm264A[I] := (t2 - t1) / fFreq * 1000000;
+
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      TMurmur2.Hash64B(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresMm264B[I] := (t2 - t1) / fFreq * 1000000;
+
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      TMurmur3.Hash(PChar(Value)^, Length(Value) * SizeOf(Char), Seed);
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresMm3[I] := (t2 - t1) / fFreq * 1000000;
+
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      Adler32CRC(PChar(Value), Length(Value) * SizeOf(Char));
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresCrc[I] := (t2 - t1) / fFreq * 1000000;
+
+      if not QueryPerformanceCounter(t1) then t1 := 0;
+      THashBobJenkins.GetHashValue(Value);
+      if not QueryPerformanceCounter(t2) then t2 := 0;
+      scoresBj[I] := (t2 - t1) / fFreq * 1000000;
+    end;
+
+
+    Status(
+      'MurMur1.Hash > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresMm1), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak +
+      'MurMur2.Hash > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresMm2), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak +
+      'MurMur2.HashA > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresMm2A), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak +
+      'MurMur2.Hash64A > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresMm264A), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak +
+      'MurMur2.Hash64B > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresMm264B), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak +
+      'MurMur3.Hash > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresMm3), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak +
+      'Adler32CRC > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresCrc), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak +
+      'BobJenkins > Hashed "' + SafeValue + '" ' + IntToStr(MAX_RUNS) +
+      'x in ' + FloatToStrF(mean(scoresBj), ffFixed, 15, 3) + ' µs average' + sLineBreak + sLineBreak
+    );
   end;
 
 const
@@ -313,6 +403,8 @@ begin
   TestString(FormatDateTime('yyyy/mm/dd hh:nn:ss.zzz', Now), $1a2b3c4d);
   TestString('AcrossDesert', $1a2b3c4d);
   TestString(BASIC_MAP_DAT, $1a2b3c4d);
+
+  TestStringAvg(BASIC_MAP_DAT, $1a2b3c4d);
 end;
 
 procedure TMurMurVsTests.SetUp;
