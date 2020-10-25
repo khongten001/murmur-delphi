@@ -22,10 +22,10 @@ MurMur supports any other kind of data:
       find2:   string;
     
     hash := TMurmur3.Hash_x86_32(find, SizeOf(WIN32_FIND_DATA), $ba5eba11);
-    hash := TMurmur3.Hash_x86_32(Pointer(find2)^, Length(find2), 123);
+    hash := TMurmur3.Hash_x86_32(Pointer(find2)^, Length(find2) * SizeOf(Char), 123);
     // These are CPU target optimized
     hash := TMurmur3.Hash(find, SizeOf(WIN32_FIND_DATA), $ba5eba11);
-    hash := TMurmur3.Hash(Pointer(find2)^, Length(find2), 123);
+    hash := TMurmur3.Hash(Pointer(find2)^, Length(find2) * SizeOf(Char), 123);
 
 Test Setting
 ----------------
