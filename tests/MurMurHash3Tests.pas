@@ -73,7 +73,7 @@ end;
 *)
 procedure TMurMur3Tests.SelfTest_Canonical_MurMur_Three_Hash;
 const
-  Expected = {$IFDEF CPUX64}'653158EDB259CBE8653158EDB259CBE8'{$ELSE}'2267EE00B57E7ACC3B64E15E2267EE00'{$ENDIF};
+  Expected = {$IFDEF CPUX64}'F640CE94B1B4F0ABF640CE94B1B4F0AB'{$ELSE}'4B8B058DB5C0765AA7F67C0E4B8B058D'{$ENDIF};
 var
   key:    array[0..255] of Byte;   //256 hashes
   hashes: TStringBuilder; //result of each of the 256 hashes
@@ -175,8 +175,8 @@ begin
   t('21 43 65 87',         0, $F55B516B); //Endian order. UInt32 should end up as 0x87654321
   t('21 43 65 87', $5082EDEE, $2362F9DE); //Seed value eliminates initial key with xor
 
-  t(   '21 43 65',         0, $85F0B427); //Only three bytes. Should end up as 0x654321
-  t(      '21 43',         0, $30F4C306); //Only two bytes. Should end up as 0x4321
+  t(   '21 43 65',         0, $7E4A8634); //Only three bytes. Should end up as 0x654321
+  t(      '21 43',         0, $A0F7B07A); //Only two bytes. Should end up as 0x4321
   t(         '21',         0, $72661CF4); //Only one bytes. Should end up as 0x21
 
   t('00 00 00 00',         0, $2362F9DE); //Zero dword eliminiates almost all math. Make sure you don't mess up the pointers and it ends up as null
@@ -192,17 +192,17 @@ begin
   TestString(#0#0#0#0, 0,         $63852AFC); //we handle embedded nulls
 
   TestString('aaaa', $9747b28c, $157E91C5); //one full chunk
-  TestString('a',    $9747b28c, $A8E39363); //one character
+  TestString('a',    $9747b28c, $AAA95179); //one character
   TestString('aa',   $9747b28c, $D881D8ED); //two characters
-  TestString('aaa',  $9747b28c, $3615EDFA); //three characters
+  TestString('aaa',  $9747b28c, $379235DB); //three characters
 
   //Endian order within the chunks
   TestString('abcd', $9747b28c, $AA4EC2D3); //one full chunk
-  TestString('a',    $9747b28c, $A8E39363);
+  TestString('a',    $9747b28c, $AAA95179);
   TestString('ab',   $9747b28c, $15EB70BC);
-  TestString('abc',  $9747b28c, $DDDD931B);
+  TestString('abc',  $9747b28c, $9DC7633E);
 
-  TestString('Hello, world!', $9747b28c, $6FB11145);
+  TestString('Hello, world!', $9747b28c, $BB57CCF7);
 
   //we build it up this way to workaround a bug in older versions of Delphi that were unable to build WideStrings correctly
   ws := n + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0; //U+03C0: Greek Small Letter Pi
@@ -218,11 +218,11 @@ begin
 
 
   //The test vector that you'll see out there for Murmur
-  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, $55FD8FC4);
+  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, $05BA6690);
 
 
   //The SHA2 test vectors
-  TestString('abc', 0, $CEE9B502);
+  TestString('abc', 0, $42B016C3);
   TestString('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 0, $50E55785);
 
   //#1) 1 byte 0xbd
@@ -232,13 +232,13 @@ begin
   t('55 8e 8c c9', 0, $A7B55574);
 
   //#3) 55 bytes of zeros (ASCII character 55)
-  TestString(StringOfChar('0', 55), 0, 3161883793);
+  TestString(StringOfChar('0', 55), 0, 209991771);
 
   //#4) 56 bytes of zeros
   TestString(StringOfChar('0', 56), 0, 655514345);
 
   //#5) 57 bytes of zeros
-  TestString(StringOfChar('0', 57), 0, 2594779779);
+  TestString(StringOfChar('0', 57), 0, 1233361997);
 
   //#6) 64 bytes of zeros
   TestString(StringOfChar('0', 64), 0, 1154515581);
@@ -250,7 +250,7 @@ begin
   TestString(StringOfChar('A', 1000), 0, 2308940363);
 
   //#9) 1005 bytes of 0x55 ‘U’
-  TestString(StringOfChar('U', 1005), 0, 3110870172);
+  TestString(StringOfChar('U', 1005), 0, 2770600210);
 end;
 
 procedure TMurMur3Tests.SelfTest_MurMur_Three_128_x86_TestVectors;
@@ -313,12 +313,12 @@ begin
   t('',                    1, '88C4ADEC88C4ADEC88C4ADEC88C4ADEC'); //ignores nearly all the math
 
   t('',            $FFFFFFFF, '051E08A9051E08A9051E08A9051E08A9'); //Make sure your seed is using unsigned math
-  t('FF FF FF FF',         0, 'CC066F1FCC066F1FCC066F1FCC066F1F'); //Make sure your 4-byte chunks are using unsigned math
-  t('21 43 65 87',         0, 'CC066F1FCC066F1FCC066F1FCC066F1F'); //Endian order. UInt32 should end up as 0x87654321
-  t('21 43 65 87', $5082EDEE, '91F761DC91F761DC91F761DC91F761DC'); //Seed value eliminates initial key with xor
+  t('FF FF FF FF',         0, '9FBC99C89FBC99C89FBC99C89FBC99C8'); //Make sure your 4-byte chunks are using unsigned math
+  t('21 43 65 87',         0, '41503EAB41503EAB41503EAB41503EAB'); //Endian order. UInt32 should end up as 0x87654321
+  t('21 43 65 87', $5082EDEE, 'A2E258D5A2E258D5A2E258D5A2E258D5'); //Seed value eliminates initial key with xor
 
-  t(   '21 43 65',         0, 'E0D93642E0D93642E0D93642E0D93642'); //Only three bytes. Should end up as 0x654321
-  t(      '21 43',         0, '04A872BB04A872BB04A872BB04A872BB'); //Only two bytes. Should end up as 0x4321
+  t(   '21 43 65',         0, '103C51C5103C51C5103C51C5103C51C5'); //Only three bytes. Should end up as 0x654321
+  t(      '21 43',         0, 'F7AF7947F7AF7947F7AF7947F7AF7947'); //Only two bytes. Should end up as 0x4321
   t(         '21',         0, '5D658BC35D658BC35D658BC35D658BC3'); //Only one bytes. Should end up as 0x21
 
   t('00 00 00 00',         0, 'CC066F1FCC066F1FCC066F1FCC066F1F'); //Zero dword eliminiates almost all math. Make sure you don't mess up the pointers and it ends up as null
@@ -333,18 +333,18 @@ begin
   TestString('',       $ffffffff, '051E08A9051E08A9051E08A9051E08A9'); //make sure seed value handled unsigned
   TestString(#0#0#0#0,         0, 'E028AE41E028AE41E028AE41E028AE41'); //we handle embedded nulls
 
-  TestString('aaaa', $9747b28c, '0D5969710D5969710D5969710D596971'); //one full chunk
-  TestString('a',    $9747b28c, 'C3599F1AC3599F1AC3599F1AC3599F1A'); //one character
-  TestString('aa',   $9747b28c, '70E8B0F870E8B0F870E8B0F870E8B0F8'); //two characters
-  TestString('aaa',  $9747b28c, '7B2DD11C7B2DD11C7B2DD11C7B2DD11C'); //three characters
+  TestString('aaaa', $9747b28c, '13E5B8573E09400A13E5B85713E5B857'); //one full chunk
+  TestString('a',    $9747b28c, '2511C5562511C5562511C5562511C556'); //one character
+  TestString('aa',   $9747b28c, '2DEDF88C2DEDF88C2DEDF88C2DEDF88C'); //two characters
+  TestString('aaa',  $9747b28c, '1A63CECF19AF5BC31A63CECF1A63CECF'); //three characters
 
   //Endian order within the chunks
-  TestString('abcd', $9747b28c, '0D5969710D5969710D5969710D596971'); //one full chunk
-  TestString('a',    $9747b28c, 'C3599F1AC3599F1AC3599F1AC3599F1A');
-  TestString('ab',   $9747b28c, '70E8B0F870E8B0F870E8B0F870E8B0F8');
-  TestString('abc',  $9747b28c, '7B2DD11C7B2DD11C7B2DD11C7B2DD11C');
+  TestString('abcd', $9747b28c, 'E7E2C3FC7FFEFEE2E7E2C3FCE7E2C3FC'); //one full chunk
+  TestString('a',    $9747b28c, '2511C5562511C5562511C5562511C556');
+  TestString('ab',   $9747b28c, '2058770D2058770D2058770D2058770D');
+  TestString('abc',  $9747b28c, '949E2C7FBDA3A4ED949E2C7F949E2C7F');
 
-  TestString('Hello, world!', $9747b28c, '169EC9209D5AB4D2EADF12FD169EC920');
+  TestString('Hello, world!', $9747b28c, '235192FD6C713A47C4890130235192FD');
 
   //we build it up this way to workaround a bug in older versions of Delphi that were unable to build WideStrings correctly
   ws := n + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0; //U+03C0: Greek Small Letter Pi
@@ -360,27 +360,27 @@ begin
 
 
   //The test vector that you'll see out there for Murmur
-  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, '7AB5455B2E3E45E706081B397AB5455B');
+  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, 'D338CF6679524F6BE45FD98FD338CF66');
 
 
   //The SHA2 test vectors
-  TestString('abc', 0, '777FA956777FA956777FA956777FA956');
+  TestString('abc', 0, '2B5B97A3FC4034A42B5B97A32B5B97A3');
   TestString('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 0, '6BC39236CF45E21AAAB6A28A6BC39236');
 
   //#1) 1 byte 0xbd
   t('bd', 0, '0A8C9F770A8C9F770A8C9F770A8C9F77');
 
   //#2) 4 bytes 0xc98c8e55
-  t('55 8e 8c c9', 0, 'CC066F1FCC066F1FCC066F1FCC066F1F');
+  t('55 8e 8c c9', 0, '0AEB24730AEB24730AEB24730AEB2473');
 
   //#3) 55 bytes of zeros (ASCII character 55)
-  TestString(StringOfChar('0', 55), 0, '80243F2CE1D7A811C2838B1A80243F2C');
+  TestString(StringOfChar('0', 55), 0, '671058753A7EDB8AB3F704F467105875');
 
   //#4) 56 bytes of zeros
   TestString(StringOfChar('0', 56), 0, '862574C77D3DCC0C6756CA99862574C7');
 
   //#5) 57 bytes of zeros
-  TestString(StringOfChar('0', 57), 0, 'E4B09A88D92DE8564B1553D5E4B09A88');
+  TestString(StringOfChar('0', 57), 0, '94D032BAF11949E1F247F36194D032BA');
 
   //#6) 64 bytes of zeros
   TestString(StringOfChar('0', 64), 0, '8889CE3DB70EDDF1810795488889CE3D');
@@ -392,7 +392,7 @@ begin
   TestString(StringOfChar('A', 1000), 0, 'AAA4FB1BD9D6A967EEB5EEAAAAA4FB1B');
 
   //#9) 1005 bytes of 0x55 ‘U’
-  TestString(StringOfChar('U', 1005), 0, '3DEB3FB8622A8435BA1152263DEB3FB8');
+  TestString(StringOfChar('U', 1005), 0, '6B43E744B89B49F64693D4FE6B43E744');
 end;
 
 procedure TMurMur3Tests.SelfTest_MurMur_Three_128_x64_TestVectors;
@@ -455,12 +455,12 @@ begin
   t('',                    1, '4610ABE56EFF5CB54610ABE56EFF5CB5'); //ignores nearly all the math
 
   t('',            $FFFFFFFF, '6AF1DF4D9D3BC9EC6AF1DF4D9D3BC9EC'); //Make sure your seed is using unsigned math
-  t('FF FF FF FF',         0, 'CFA0F7DDD84C76BCCFA0F7DDD84C76BC'); //Make sure your 4-byte chunks are using unsigned math
-  t('21 43 65 87',         0, 'CFA0F7DDD84C76BCCFA0F7DDD84C76BC'); //Endian order. UInt32 should end up as 0x87654321
-  t('21 43 65 87', $5082EDEE, 'BBAED8034A59B914BBAED8034A59B914'); //Seed value eliminates initial key with xor
+  t('FF FF FF FF',         0, '43DA45EB3466464143DA45EB34664641'); //Make sure your 4-byte chunks are using unsigned math
+  t('21 43 65 87',         0, 'B74C53765D7762D4B74C53765D7762D4'); //Endian order. UInt32 should end up as 0x87654321
+  t('21 43 65 87', $5082EDEE, '5797A3ABDC7D36A15797A3ABDC7D36A1'); //Seed value eliminates initial key with xor
 
-  t(   '21 43 65',         0, '79D54DD1BF71374879D54DD1BF713748'); //Only three bytes. Should end up as 0x654321
-  t(      '21 43',         0, '3044B81A706C5DE83044B81A706C5DE8'); //Only two bytes. Should end up as 0x4321
+  t(   '21 43 65',         0, 'E56213869E0D3A6FE56213869E0D3A6F'); //Only three bytes. Should end up as 0x654321
+  t(      '21 43',         0, 'DA5B0388EB53F2D0DA5B0388EB53F2D0'); //Only two bytes. Should end up as 0x4321
   t(         '21',         0, '1411D0B2F8A2863D1411D0B2F8A2863D'); //Only one bytes. Should end up as 0x21
 
   t('00 00 00 00',         0, 'CFA0F7DDD84C76BCCFA0F7DDD84C76BC'); //Zero dword eliminiates almost all math. Make sure you don't mess up the pointers and it ends up as null
@@ -475,18 +475,18 @@ begin
   TestString('',       $ffffffff, '6AF1DF4D9D3BC9EC6AF1DF4D9D3BC9EC'); //make sure seed value handled unsigned
   TestString(#0#0#0#0,         0, '28DF63B7CC57C3CB28DF63B7CC57C3CB'); //we handle embedded nulls
 
-  TestString('aaaa', $9747b28c, '6C767615E6B7E2706C767615E6B7E270'); //one full chunk
-  TestString('a',    $9747b28c, 'DF71433BC4531D42DF71433BC4531D42'); //one character
-  TestString('aa',   $9747b28c, '0B0C140CDAF536940B0C140CDAF53694'); //two characters
-  TestString('aaa',  $9747b28c, '6951A4260F199E9F6951A4260F199E9F'); //three characters
+  TestString('aaaa', $9747b28c, '83ADA70A4500D93E83ADA70A4500D93E'); //one full chunk
+  TestString('a',    $9747b28c, '00951DA297DC471200951DA297DC4712'); //one character
+  TestString('aa',   $9747b28c, 'CF88372C53F91BA3CF88372C53F91BA3'); //two characters
+  TestString('aaa',  $9747b28c, 'C7A2AE145E1E32FCC7A2AE145E1E32FC'); //three characters
 
   //Endian order within the chunks
-  TestString('abcd', $9747b28c, '6C767615E6B7E2706C767615E6B7E270'); //one full chunk
-  TestString('a',    $9747b28c, 'DF71433BC4531D42DF71433BC4531D42');
-  TestString('ab',   $9747b28c, '0B0C140CDAF536940B0C140CDAF53694');
-  TestString('abc',  $9747b28c, '6951A4260F199E9F6951A4260F199E9F');
+  TestString('abcd', $9747b28c, 'A5469B3FD97D7FCFA5469B3FD97D7FCF'); //one full chunk
+  TestString('a',    $9747b28c, '00951DA297DC471200951DA297DC4712');
+  TestString('ab',   $9747b28c, 'E18D469DAF632EADE18D469DAF632EAD');
+  TestString('abc',  $9747b28c, '82025A96BB20023B82025A96BB20023B');
 
-  TestString('Hello, world!', $9747b28c, 'D86870FB940744EED86870FB940744EE');
+  TestString('Hello, world!', $9747b28c, '6E7F4F531DC749A36E7F4F531DC749A3');
 
   //we build it up this way to workaround a bug in older versions of Delphi that were unable to build WideStrings correctly
   ws := n + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0; //U+03C0: Greek Small Letter Pi
@@ -502,27 +502,27 @@ begin
 
 
   //The test vector that you'll see out there for Murmur
-  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, '809D3153A2953764809D3153A2953764');
+  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, 'D6B662BE8104BD22D6B662BE8104BD22');
 
 
   //The SHA2 test vectors
-  TestString('abc', 0, '7D480F9FA80EC4697D480F9FA80EC469');
+  TestString('abc', 0, '0C25A174B09E4DE30C25A174B09E4DE3');
   TestString('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 0, '4906129CB17705444906129CB1770544');
 
   //#1) 1 byte 0xbd
   t('bd', 0, 'F6071B2F0828D3E9F6071B2F0828D3E9');
 
   //#2) 4 bytes 0xc98c8e55
-  t('55 8e 8c c9', 0, 'CFA0F7DDD84C76BCCFA0F7DDD84C76BC');
+  t('55 8e 8c c9', 0, '480E6E127C1642B2480E6E127C1642B2');
 
   //#3) 55 bytes of zeros (ASCII character 55)
-  TestString(StringOfChar('0', 55), 0, 'B5F31E11B12E86BDB5F31E11B12E86BD');
+  TestString(StringOfChar('0', 55), 0, '098329CEDDFD8B16098329CEDDFD8B16');
 
   //#4) 56 bytes of zeros
   TestString(StringOfChar('0', 56), 0, '346F5BA0718CAA72346F5BA0718CAA72');
 
   //#5) 57 bytes of zeros
-  TestString(StringOfChar('0', 57), 0, '9E92B36BF19E18FF9E92B36BF19E18FF');
+  TestString(StringOfChar('0', 57), 0, '528DB5CA8C2E3573528DB5CA8C2E3573');
 
   //#6) 64 bytes of zeros
   TestString(StringOfChar('0', 64), 0, 'B44669588F16290FB44669588F16290F');
@@ -534,7 +534,7 @@ begin
   TestString(StringOfChar('A', 1000), 0, '7E5635AEB99372247E5635AEB9937224');
 
   //#9) 1005 bytes of 0x55 ‘U’
-  TestString(StringOfChar('U', 1005), 0, 'BF1B13D4709DE33DBF1B13D4709DE33D');
+  TestString(StringOfChar('U', 1005), 0, 'D5DB8120A05AB201D5DB8120A05AB201');
 end;
 
 procedure TMurMur3Tests.SetUp;

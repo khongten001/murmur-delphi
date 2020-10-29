@@ -38,17 +38,17 @@ Test Results
 
 x86 build results:
 
-    MurMur1.Hash > Hashed 1000x in 20.870 µs average
+    MurMur1.Hash > Hashed 1000x in 21.151 µs average
     
-    MurMur2.Hash > Hashed 1000x in 17.359 µs average
+    MurMur2.Hash > Hashed 1000x in 17.733 µs average
     
-    MurMur2.HashA > Hashed 1000x in 17.457 µs average
+    MurMur2.HashA > Hashed 1000x in 17.723 µs average
     
-    MurMur2.Hash64A > Hashed 1000x in 26.224 µs average
+    MurMur2.Hash64A > Hashed 1000x in 26.601 µs average
     
-    MurMur2.Hash64B > Hashed 1000x in 15.320 µs average
+    MurMur2.Hash64B > Hashed 1000x in 15.480 µs average
     
-    MurMur3.Hash > Hashed 1000x in 17.995 µs average
+    MurMur3.Hash > Hashed 1000x in 18.331 µs average
     
     Adler32CRC > Hashed 1000x in 31.032 µs average
     
@@ -56,17 +56,17 @@ x86 build results:
 
 x64 build results:
 
-    MurMur1.Hash > Hashed 1000x in 20.167 µs average
+    MurMur1.Hash > Hashed 1000x in 20.777 µs average
     
-    MurMur2.Hash > Hashed 1000x in 18.292 µs average
+    MurMur2.Hash > Hashed 1000x in 18.788 µs average
     
-    MurMur2.HashA > Hashed 1000x in 18.282 µs average
+    MurMur2.HashA > Hashed 1000x in 18.634 µs average
     
-    MurMur2.Hash64A > Hashed 1000x in 9.585 µs average
+    MurMur2.Hash64A > Hashed 1000x in 9.671 µs average
     
-    MurMur2.Hash64B > Hashed 1000x in 15.067 µs average
+    MurMur2.Hash64B > Hashed 1000x in 15.529 µs average
     
-    MurMur3.Hash > Hashed 1000x in 9.887 µs average
+    MurMur3.Hash > Hashed 1000x in 10.302 µs average
     
     Adler32CRC > Hashed 1000x in 30.083 µs average
     

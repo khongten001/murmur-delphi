@@ -71,7 +71,7 @@ end;
 *)
 procedure TMurMur1Tests.SelfTest_Canonical_MurMur_One_Hash;
 const
-  Expected: Cardinal = $99C0243B;
+  Expected: Cardinal = $9EA7D056;
 var
   key:    array[0..255] of Byte;     //256 hashes
   hashes: array[0..256] of Cardinal; //result of each of the 256 hashes
@@ -105,7 +105,7 @@ end;
 
 procedure TMurMur1Tests.SelfTest_Canonical_MurMur_One_HashAligned;
 const
-  Expected: Cardinal = $99C0243B;
+  Expected: Cardinal = $9EA7D056;
 var
   key:    array[0..255] of Byte;     //256 hashes
   hashes: array[0..256] of Cardinal; //result of each of the 256 hashes
@@ -206,13 +206,13 @@ begin
   t('21 43 65 87',         0, $2D0F8B30); //Endian order. UInt32 should end up as 0x87654321
   t('21 43 65 87', $5082EDEE, $794998F3); //Seed value eliminates initial key with xor
 
-  t(   '21 43 65',         0, $C82D0141); //Only three bytes. Should end up as 0x654321
-  t(      '21 43',         0, $5F66FF1E); //Only two bytes. Should end up as 0x4321
+  t(   '21 43 65',         0, $28B2CCFA); //Only three bytes. Should end up as 0x654321
+  t(      '21 43',         0, $359FFC84); //Only two bytes. Should end up as 0x4321
   t(         '21',         0, $2940649F); //Only one bytes. Should end up as 0x21
 
   t('00 00 00 00',         0, $EB4ED66A); //Zero dword eliminiates almost all math. Make sure you don't mess up the pointers and it ends up as null
-  t(   '00 00 00',         0, $1E460534); //Only three bytes. Should end up as 0.
-  t(      '00 00',         0, $333C11F9); //Only two bytes. Should end up as 0.
+  t(   '00 00 00',         0, $8955FEFF); //Only three bytes. Should end up as 0.
+  t(      '00 00',         0, $1FF4F1E7); //Only two bytes. Should end up as 0.
   t(         '00',         0, $8837CF3E); //Only one bytes. Should end up as 0.
 
 
@@ -223,17 +223,17 @@ begin
   TestString(#0#0#0#0, 0,         $1FC6945B); //we handle embedded nulls
 
   TestString('aaaa', $9747b28c, $E3A2199B); //one full chunk
-  TestString('a',    $9747b28c, $C0F5DF3D); //one character
+  TestString('a',    $9747b28c, $E85BDA75); //one character
   TestString('aa',   $9747b28c, $8D43FC88); //two characters
-  TestString('aaa',  $9747b28c, $E9B4440B); //three characters
+  TestString('aaa',  $9747b28c, $751ACB99); //three characters
 
   //Endian order within the chunks
   TestString('abcd', $9747b28c, $A78F9530); //one full chunk
-  TestString('a',    $9747b28c, $C0F5DF3D);
+  TestString('a',    $9747b28c, $E85BDA75);
   TestString('ab',   $9747b28c, $CF9066BA);
-  TestString('abc',  $9747b28c, $B089705D);
+  TestString('abc',  $9747b28c, $5377B065);
 
-  TestString('Hello, world!', $9747b28c, $6279B6C7);
+  TestString('Hello, world!', $9747b28c, $9CE0F114);
 
   //we build it up this way to workaround a bug in older versions of Delphi that were unable to build WideStrings correctly
   ws := n + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0 + #$03C0; //U+03C0: Greek Small Letter Pi
@@ -249,11 +249,11 @@ begin
 
 
   //The test vector that you'll see out there for Murmur
-  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, $025A8B4A);
+  TestString('The quick brown fox jumps over the lazy dog', $9747b28c, $1AF833CC);
 
 
   //The SHA2 test vectors
-  TestString('abc', 0, $998E3B72);
+  TestString('abc', 0, $0A757300);
   TestString('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 0, $CD4252FF);
 
   //#1) 1 byte 0xbd
@@ -263,13 +263,13 @@ begin
   t('55 8e 8c c9', 0, $F674766B);
 
   //#3) 55 bytes of zeros (ASCII character 55)
-  TestString(StringOfChar('0', 55), 0, 1699016170);
+  TestString(StringOfChar('0', 55), 0, 1397241729);
 
   //#4) 56 bytes of zeros
   TestString(StringOfChar('0', 56), 0, 2793276253);
 
   //#5) 57 bytes of zeros
-  TestString(StringOfChar('0', 57), 0, 2785633196);
+  TestString(StringOfChar('0', 57), 0, 2318603153);
 
   //#6) 64 bytes of zeros
   TestString(StringOfChar('0', 64), 0, 1294100748);
@@ -281,7 +281,7 @@ begin
   TestString(StringOfChar('A', 1000), 0, 66908384);
 
   //#9) 1005 bytes of 0x55 ‘U’
-  TestString(StringOfChar('U', 1005), 0, 2111496562);
+  TestString(StringOfChar('U', 1005), 0, 840197880);
 end;
 
 procedure TMurmur1Tests.SetUp;

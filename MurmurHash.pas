@@ -174,6 +174,8 @@ var
   k:      UInt32;
   data:   PByteArray;
   i, len: Integer;
+label
+  case_0, case_1, case_2, case_3;
 begin
   Result := Seed xor (KeyLen * m);
   data   := PByteArray(@Key);
@@ -192,18 +194,22 @@ begin
   end;
 
   case len of
-    3:
-      Result := Result + (data[i + 2] shl SH_AMNT_16);
-    2:
-      Result := Result + (data[i + 1] shl SH_AMNT_8);
-    1:
-    begin
-      Result := Result + data[i];
-      Result := Result * m;
-      Result := Result xor (Result shr SH_AMNT_16);
-    end;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_3:
+  Result := Result + (data[i + 2] shl SH_AMNT_16);
+case_2:
+  Result := Result + (data[i + 1] shl SH_AMNT_8);
+case_1:
+  Result := Result + data[i];
+  Result := Result * m;
+  Result := Result xor (Result shr SH_AMNT_16);
+
+case_0:
   Result := Result * m;
   Result := Result xor (Result shr SH_AMNT_10);
   Result := Result * m;
@@ -226,6 +232,10 @@ var
   t, d:                        UInt32;
   data:                        PByteArray;
   i, len, align, sl, sr, pack: Integer;
+label
+  align_case_1, align_case_2, align_case_3,
+  pack_case_0, pack_case_1, pack_case_2, pack_case_3,
+  case_0, case_1, case_2, case_3;
 begin
   Result := Seed xor (KeyLen * m);
   data   := PByteArray(@Key);
@@ -237,13 +247,19 @@ begin
   begin
     // Pre-load the temp registers
     t := 0;
-    d := 0;
 
     case align of
-      1: t := t or (data[2] shl SH_AMNT_16);
-      2: t := t or (data[1] shl SH_AMNT_8);
-      3: t := t or data[0];
+      1: goto align_case_1;
+      2: goto align_case_2;
+      3: goto align_case_3;
     end;
+
+align_case_1:
+    t := t or (data[2] shl SH_AMNT_16);
+align_case_2:
+    t := t or (data[1] shl SH_AMNT_8);
+align_case_3:
+    t := t or data[0];
 
     t := t shl (SH_AMNT_8 * align);
     Inc(i, 4 - align);
@@ -271,19 +287,22 @@ begin
     d := 0;
 
     case pack of
-      3:
-        d := d or (data[i + 2] shl SH_AMNT_16);
-      2:
-        d := d or (data[i + 1] shl SH_AMNT_8);
-      1:
-        d := d or data[i];
-      0:
-      begin
-        Result := Result + ((SH_AMNT_16 shr sr) or (d shl sl));
-        Result := Result * m;
-        Result := Result xor (Result shr SH_AMNT_16);
-      end;
+      3: goto pack_case_3;
+      2: goto pack_case_2;
+      1: goto pack_case_1;
+      0: goto pack_case_0;
     end;
+
+pack_case_3:
+    d := d or (data[i + 2] shl SH_AMNT_16);
+pack_case_2:
+    d := d or (data[i + 1] shl SH_AMNT_8);
+pack_case_1:
+    d := d or data[i];
+pack_case_0:
+    Result := Result + ((SH_AMNT_16 shr sr) or (d shl sl));
+    Result := Result * m;
+    Result := Result xor (Result shr SH_AMNT_16);
 
     Inc(i, pack);
     Dec(len, pack);
@@ -302,18 +321,22 @@ begin
 
   // Handle tail bytes
   case len of
-    3:
-      Result := Result + (data[i + 2] shl SH_AMNT_16);
-    2:
-      Result := Result + (data[i + 1] shl SH_AMNT_8);
-    1:
-    begin
-      Result := Result + data[i];
-      Result := Result * m;
-      Result := Result xor (Result shr SH_AMNT_16);
-    end;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_3:
+  Result := Result + (data[i + 2] shl SH_AMNT_16);
+case_2:
+  Result := Result + (data[i + 1] shl SH_AMNT_8);
+case_1:
+  Result := Result + data[i];
+  Result := Result * m;
+  Result := Result xor (Result shr SH_AMNT_16);
+
+case_0:
   Result := Result * m;
   Result := Result xor (Result shr SH_AMNT_10);
   Result := Result * m;
@@ -331,6 +354,8 @@ var
   k:      UInt32;
   data:   PByteArray;
   i, len: Integer;
+label
+  case_0, case_1, case_2, case_3;
 begin
   // Initialize the hash to a 'random' value
   Result := Seed or KeyLen;
@@ -351,17 +376,21 @@ begin
 
   // Handle the last few bytes of the input array
   case len of
-    3:
-      Result := Result xor data[i + 2] shl SH_AMNT_16;
-    2:
-      Result := Result xor data[i + 1] shl SH_AMNT_8;
-    1:
-    begin
-      Result := Result xor data[i];
-      Result := Result * m;
-    end;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_3:
+  Result := Result xor data[i + 2] shl SH_AMNT_16;
+case_2:
+  Result := Result xor data[i + 1] shl SH_AMNT_8;
+case_1:
+  Result := Result xor data[i];
+  Result := Result * m;
+
+case_0:
   // Do a few final mixes of the hash to ensure the last few bytes are well-incorporated.
   Result := Result xor (Result shr SH_AMNT_13);
   Result := Result * m;
@@ -388,6 +417,8 @@ var
   k, l, t: UInt32;
   data:    PByteArray;
   i, len:  Integer;
+label
+  case_0, case_1, case_2, case_3;
 begin
   Result := Seed;
   data   := PByteArray(@Key);
@@ -408,14 +439,20 @@ begin
   t := 0;
 
   case len of
-    3:
-      t := t xor (data[i + 2] shl SH_AMNT_16);
-    2:
-      t := t xor (data[i + 1] shl SH_AMNT_8);
-    1:
-      t := t xor data[i];
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_3:
+  t := t xor (data[i + 2] shl SH_AMNT_16);
+case_2:
+  t := t xor (data[i + 1] shl SH_AMNT_8);
+case_1:
+  t := t xor data[i];
+
+case_0:
   mmix(Result, t, m, SH_AMNT_24);
   mmix(Result, l, m, SH_AMNT_24);
 
@@ -440,6 +477,8 @@ var
   k:      UInt64;
   data:   PByteArray;
   i, len: Integer;
+label
+  case_0, case_1, case_2, case_3, case_4, case_5, case_6, case_7;
 begin
   Result := Seed xor (KeyLen * m);
   data   := PByteArray(@Key);
@@ -462,25 +501,33 @@ begin
   end;
 
   case len of
-    7:
-      Result := Result xor (UInt64(data[i + 6]) shl 48);
-    6:
-      Result := Result xor (UInt64(data[i + 5]) shl 40);
-    5:
-      Result := Result xor (UInt64(data[i + 4]) shl SH_AMNT_32);
-    4:
-      Result := Result xor (UInt64(data[i + 3]) shl SH_AMNT_24);
-    3:
-      Result := Result xor (UInt64(data[i + 2]) shl SH_AMNT_16);
-    2:
-      Result := Result xor (UInt64(data[i + 1]) shl SH_AMNT_8);
-    1:
-    begin
-      Result := Result xor UInt64(data[i]);
-      Result := Result * m;
-    end;
+    7: goto case_7;
+    6: goto case_6;
+    5: goto case_5;
+    4: goto case_4;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_7:
+      Result := Result xor (UInt64(data[i + 6]) shl 48);
+case_6:
+      Result := Result xor (UInt64(data[i + 5]) shl 40);
+case_5:
+      Result := Result xor (UInt64(data[i + 4]) shl SH_AMNT_32);
+case_4:
+      Result := Result xor (UInt64(data[i + 3]) shl SH_AMNT_24);
+case_3:
+      Result := Result xor (UInt64(data[i + 2]) shl SH_AMNT_16);
+case_2:
+      Result := Result xor (UInt64(data[i + 1]) shl SH_AMNT_8);
+case_1:
+      Result := Result xor UInt64(data[i]);
+      Result := Result * m;
+
+case_0:
   Result := Result xor (Result shr SH_AMNT_47);
   Result := Result * m;
   Result := Result xor (Result shr SH_AMNT_47);
@@ -495,6 +542,8 @@ var
   h1, h2, k1, k2: UInt32;
   data:           PByteArray;
   i, len:         Integer;
+label
+  case_0, case_1, case_2, case_3;
 begin
   h1   := UInt32(Seed) xor KeyLen;
   h2   := UInt32(Seed shr SH_AMNT_32);
@@ -536,17 +585,21 @@ begin
   end;
 
   case len of
-    3:
-      h2 := h2 xor (data[i + 2] shl SH_AMNT_16);
-    2:
-      h2 := h2 xor (data[i + 1] shl SH_AMNT_8);
-    1:
-    begin
-      h2 := h2 xor data[i];
-      h2 := h2 * m;
-    end;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_3:
+  h2 := h2 xor (data[i + 2] shl SH_AMNT_16);
+case_2:
+  h2 := h2 xor (data[i + 1] shl SH_AMNT_8);
+case_1:
+  h2 := h2 xor data[i];
+  h2 := h2 * m;
+
+case_0:
   h1 := h1 xor (h2 shr 18);
   h1 := h1 * m;
   h2 := h2 xor (h1 shr 22);
@@ -573,6 +626,8 @@ var
   k:      UInt32;
   data:   PByteArray;
   i, len: Integer;
+label
+  case_0, case_1, case_2, case_3;
 begin
   Result := Seed xor KeyLen;
   data   := PByteArray(@Key);
@@ -598,17 +653,21 @@ begin
   end;
 
   case len of
-    3:
-      Result := Result xor data[i + 2] shl SH_AMNT_16;
-    2:
-      Result := Result xor data[i + 1] shl SH_AMNT_8;
-    1:
-    begin
-      Result := Result xor data[i];
-      Result := Result * m;
-    end;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_3:
+  Result := Result xor data[i + 2] shl SH_AMNT_16;
+case_2:
+  Result := Result xor data[i + 1] shl SH_AMNT_8;
+case_1:
+  Result := Result xor data[i];
+  Result := Result * m;
+
+case_0:
   Result := Result xor (Result shr SH_AMNT_13);
   Result := Result * m;
   Result := Result xor (Result shr SH_AMNT_15);
@@ -637,6 +696,12 @@ var
   k, t, d:               UInt32;
   data:                  PByteArray;
   i, len, align, sl, sr: Integer;
+label
+  align_case_1, align_case_2, align_case_3,
+  pack_case_1, pack_case_2, pack_case_3,
+  t1_case_0, t1_case_1, t1_case_2, t1_case_3,
+  t2_case_0, t2_case_1, t2_case_2, t2_case_3,
+  t3_case_0, t3_case_1, t3_case_2, t3_case_3;
 begin
   Result := Seed xor KeyLen;
   data   := PByteArray(@Key);
@@ -648,16 +713,19 @@ begin
   begin
     // Pre-load the temp registers
     t := 0;
-    d := 0;
 
     case align of
-      1:
-        t := t or (data[2] shl SH_AMNT_16);
-      2:
-        t := t or (data[1] shl SH_AMNT_8);
-      3:
-        t := t or data[0];
+      1: goto align_case_1;
+      2: goto align_case_2;
+      3: goto align_case_3;
     end;
+
+align_case_1:
+    t := t or (data[2] shl SH_AMNT_16);
+align_case_2:
+    t := t or (data[1] shl SH_AMNT_8);
+align_case_3:
+    t := t or data[0];
 
     t := t shl (SH_AMNT_8 * align);
 
@@ -689,13 +757,17 @@ begin
     if(len >= align) then
     begin
       case align of
-        3:
-          d := d or (data[i + 2] shl SH_AMNT_16);
-        2:
-          d := d or (data[i + 1] shl SH_AMNT_8);
-        1:
-          d := d or data[i];
+        3: goto pack_case_3;
+        2: goto pack_case_2;
+        1: goto pack_case_1;
       end;
+
+pack_case_3:
+      d := d or (data[i + 2] shl SH_AMNT_16);
+pack_case_2:
+      d := d or (data[i + 1] shl SH_AMNT_8);
+pack_case_1:
+      d := d or data[i];
 
       k := (t shr sr) or (d shl sl);
       MIX(Result, k, m);
@@ -706,36 +778,38 @@ begin
       //----------
       // Handle tail bytes
       case len of
-        3:
-          Result := Result xor (data[i + 2] shl SH_AMNT_16);
-        2:
-          Result := Result xor (data[i + 1] shl SH_AMNT_8);
-        1:
-        begin
-          Result := Result xor data[i];
-          Result := Result * m;
-        end;
+        3: goto t1_case_3;
+        2: goto t1_case_2;
+        1: goto t1_case_1;
+        0: goto t1_case_0;
       end;
+
+t1_case_3:
+      Result := Result xor (data[i + 2] shl SH_AMNT_16);
+t1_case_2:
+      Result := Result xor (data[i + 1] shl SH_AMNT_8);
+t1_case_1:
+      Result := Result xor data[i];
+      Result := Result * m;
     end else
     begin
       case len of
-        3:
-          d := d or (data[i + 2] shl SH_AMNT_16);
-        2:
-          d := d or (data[i + 1] shl SH_AMNT_8);
-        1:
-          d := d or data[i];
-        0:
-        begin
-          Result := Result xor (t shr sr) or (d shl sl);
-          Result := Result * m;
-        end;
+        3: goto t2_case_3;
+        2: goto t2_case_2;
+        1: goto t2_case_1;
+        0: goto t2_case_0;
       end;
-    end;
 
-    Result := Result xor (Result shr SH_AMNT_13);
-    Result := Result * m;
-    Result := Result xor (Result shr SH_AMNT_15);
+t2_case_3:
+      d := d or (data[i + 2] shl SH_AMNT_16);
+t2_case_2:
+      d := d or (data[i + 1] shl SH_AMNT_8);
+t2_case_1:
+      d := d or data[i];
+t2_case_0:
+      Result := Result xor (t shr sr) or (d shl sl);
+      Result := Result * m;
+    end;
   end else
   begin
     while len >= 4 do
@@ -751,21 +825,26 @@ begin
     //----------
     // Handle tail bytes
     case len of
-      3:
-        Result := Result xor (data[i + 2] shl SH_AMNT_16);
-      2:
-        Result := Result xor (data[i + 1] shl SH_AMNT_8);
-      1:
-      begin
-        Result := Result xor data[i];
-        Result := Result * m;
-      end;
+      3: goto t3_case_3;
+      2: goto t3_case_2;
+      1: goto t3_case_1;
+      0: goto t3_case_0;
     end;
 
-    Result := Result xor (Result shr SH_AMNT_13);
+t3_case_3:
+    Result := Result xor (data[i + 2] shl SH_AMNT_16);
+t3_case_2:
+    Result := Result xor (data[i + 1] shl SH_AMNT_8);
+t3_case_1:
+    Result := Result xor data[i];
     Result := Result * m;
-    Result := Result xor (Result shr SH_AMNT_15);
   end;
+
+t1_case_0:
+t3_case_0:
+  Result := Result xor (Result shr SH_AMNT_13);
+  Result := Result * m;
+  Result := Result xor (Result shr SH_AMNT_15);
 end;
 
 constructor TMurMur2.Create(Seed: UInt32);
@@ -795,7 +874,7 @@ begin
     mmix(fHash, k, m, r);
 
     Inc(i, 4);
-    Dec(dataLen, 4);
+    Dec(len, 4);
   end;
 
   MixTail(data, len, i);
@@ -824,9 +903,9 @@ begin
 
     if fCount = 4 then
     begin
-        mmix(fHash, fTail, m, r);
-        fTail  := 0;
-        fCount := 0;
+      mmix(fHash, fTail, m, r);
+      fTail  := 0;
+      fCount := 0;
     end;
   end;
 end;
@@ -844,6 +923,8 @@ var
   blocks:     PUInt32Array;
   i, nBlocks: Integer;
   len, k1:    UInt32;
+label
+  case_0, case_1, case_2, case_3;
 begin
   len     := KeyLen;
   data    := PByteArray(@Key);
@@ -873,20 +954,24 @@ begin
   k1 := 0;
 
   case len and 3 of
-    3:
-      k1 := k1 xor (data[i + 2] shl SH_AMNT_16);
-    2:
-      k1 := k1 xor (data[i + 1] shl SH_AMNT_8);
-    1:
-    begin
-      k1     := k1 xor data[i];
-      k1     := k1 * c1;
-      k1     := ROTL32(k1, SH_AMNT_15);
-      k1     := k1 * c2;
-      Result := Result xor k1;
-    end;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_3:
+  k1 := k1 xor (data[i + 2] shl SH_AMNT_16);
+case_2:
+  k1 := k1 xor (data[i + 1] shl SH_AMNT_8);
+case_1:
+  k1     := k1 xor data[i];
+  k1     := k1 * c1;
+  k1     := ROTL32(k1, SH_AMNT_15);
+  k1     := k1 * c2;
+  Result := Result xor k1;
+
+case_0:
   //----------
   // finalization
   Result := Result xor len;
@@ -908,6 +993,9 @@ var
   len,
   h1, h2, h3, h4,
   k1, k2, k3, k4: UInt32;
+label
+  case_0, case_1, case_2, case_3, case_4, case_5, case_6, case_7, case_8,
+  case_9, case_10, case_11, case_12, case_13, case_14, case_15;
 begin
   len     := KeyLen;
   data    := PByteArray(@Key);
@@ -974,62 +1062,72 @@ begin
   k4 := 0;
 
   case len and 15 of
-    15:
-      k4 := k4 xor (data[i + 14] shl SH_AMNT_16);
-    14:
-      k4 := k4 xor (data[i + 13] shl SH_AMNT_8);
-    13:
-    begin
-      k4 := k4 xor (data[i + 12] shl 0);
-      k4 := k4 * c4;
-      k4 := ROTL32(k4, 18);
-      k4 := k4 * c1;
-      h4 := h4 xor k4;
-    end;
-    12:
-      k3 := k3 xor (data[i + 11] shl SH_AMNT_24);
-    11:
-      k3 := k3 xor (data[i + 10] shl SH_AMNT_16);
-    10:
-      k3 := k3 xor (data[i + 9] shl SH_AMNT_8);
-    9:
-    begin
-      k3 := k3 xor (data[i + 8] shl 0);
-      k3 := k3 * c3;
-      k3 := ROTL32(k3, SH_AMNT_17);
-      k3 := k3 * c4;
-      h3 := h3 xor k3;
-    end;
-    8:
-      k2 := k2 xor (data[i + 7] shl SH_AMNT_24);
-    7:
-      k2 := k2 xor (data[i + 6] shl SH_AMNT_16);
-    6:
-      k2 := k2 xor (data[i + 5] shl SH_AMNT_8);
-    5:
-    begin
-      k2 := k2 xor (data[i + 4] shl 0);
-      k2 := k2 * c2;
-      k2 := ROTL32(k2, SH_AMNT_16);
-      k2 := k2 * c3;
-      h2 := h2 xor k2;
-    end;
-    4:
-      k1 := k1 xor (data[i + 3] shl SH_AMNT_24);
-    3:
-      k1 := k1 xor (data[i + 2] shl SH_AMNT_16);
-    2:
-      k1 := k1 xor (data[i + 1] shl SH_AMNT_8);
-    1:
-    begin
-      k1 := k1 xor (data[i] shl 0);
-      k1 := k1 * c1;
-      k1 := ROTL32(k1, SH_AMNT_15);
-      k1 := k1 * c2;
-      h1 := h1 xor k1;
-    end;
+    15: goto case_15;
+    14: goto case_14;
+    13: goto case_13;
+    12: goto case_12;
+    11: goto case_11;
+    10: goto case_10;
+    9: goto case_9;
+    8: goto case_8;
+    7: goto case_7;
+    6: goto case_6;
+    5: goto case_5;
+    4: goto case_4;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_15:
+  k4 := k4 xor (data[i + 14] shl SH_AMNT_16);
+case_14:
+  k4 := k4 xor (data[i + 13] shl SH_AMNT_8);
+case_13:
+  k4 := k4 xor (data[i + 12] shl 0);
+  k4 := k4 * c4;
+  k4 := ROTL32(k4, 18);
+  k4 := k4 * c1;
+  h4 := h4 xor k4;
+case_12:
+  k3 := k3 xor (data[i + 11] shl SH_AMNT_24);
+case_11:
+  k3 := k3 xor (data[i + 10] shl SH_AMNT_16);
+case_10:
+  k3 := k3 xor (data[i + 9] shl SH_AMNT_8);
+case_9:
+  k3 := k3 xor (data[i + 8] shl 0);
+  k3 := k3 * c3;
+  k3 := ROTL32(k3, SH_AMNT_17);
+  k3 := k3 * c4;
+  h3 := h3 xor k3;
+case_8:
+  k2 := k2 xor (data[i + 7] shl SH_AMNT_24);
+case_7:
+  k2 := k2 xor (data[i + 6] shl SH_AMNT_16);
+case_6:
+  k2 := k2 xor (data[i + 5] shl SH_AMNT_8);
+case_5:
+  k2 := k2 xor (data[i + 4] shl 0);
+  k2 := k2 * c2;
+  k2 := ROTL32(k2, SH_AMNT_16);
+  k2 := k2 * c3;
+  h2 := h2 xor k2;
+case_4:
+  k1 := k1 xor (data[i + 3] shl SH_AMNT_24);
+case_3:
+  k1 := k1 xor (data[i + 2] shl SH_AMNT_16);
+case_2:
+  k1 := k1 xor (data[i + 1] shl SH_AMNT_8);
+case_1:
+  k1 := k1 xor (data[i] shl 0);
+  k1 := k1 * c1;
+  k1 := ROTL32(k1, SH_AMNT_15);
+  k1 := k1 * c2;
+  h1 := h1 xor k1;
+
+case_0:
   //----------
   // finalization
   h1 := h1 xor len;
@@ -1066,6 +1164,9 @@ var
   i, nBlocks:     Integer;
   len,
   h1, h2, k1, k2: UInt64;
+label
+  case_0, case_1, case_2, case_3, case_4, case_5, case_6, case_7, case_8,
+  case_9, case_10, case_11, case_12, case_13, case_14, case_15;
 begin
   len     := KeyLen;
   data    := PByteArray(@Key);
@@ -1108,50 +1209,64 @@ begin
   k2 := 0;
 
   case len and 15 of
-    15:
-      k2 := k2 xor (UInt64(data[i + 14]) shl 48);
-    14:
-      k2 := k2 xor (UInt64(data[i + 13]) shl 40);
-    13:
-      k2 := k2 xor (UInt64(data[i + 12]) shl 32);
-    12:
-      k2 := k2 xor (UInt64(data[i + 11]) shl 24);
-    11:
-      k2 := k2 xor (UInt64(data[i + 10]) shl 16);
-    10:
-      k2 := k2 xor (UInt64(data[i + 9]) shl 8);
-    9:
-    begin
-      k2 := k2 xor (UInt64(data[i + 8]) shl 0);
-      k2 := k2 * c2;
-      k2 := ROTL64(k2, 33);
-      k2 := k2 * c1;
-      h2 := h2 xor k2;
-    end;
-    8:
-      k1 := k1 xor (UInt64(data[i + 7]) shl 56);
-    7:
-      k1 := k1 xor (UInt64(data[i + 6]) shl 48);
-    6:
-      k1 := k1 xor (UInt64(data[i + 5]) shl 40);
-    5:
-      k1 := k1 xor (UInt64(data[i + 4]) shl 32);
-    4:
-      k1 := k1 xor (UInt64(data[i + 3]) shl 24);
-    3:
-      k1 := k1 xor (UInt64(data[i + 2]) shl 16);
-    2:
-      k1 := k1 xor (UInt64(data[i + 1]) shl 8);
-    1:
-    begin
-      k1 := k1 xor (UInt64(data[i + 0]) shl 0);
-      k1 := k1 * c1;
-      k1 := ROTL64(k1, 31);
-      k1 := k1 * c2;
-      h1 := h1 xor k1;
-    end;
+    15: goto case_15;
+    14: goto case_14;
+    13: goto case_13;
+    12: goto case_12;
+    11: goto case_11;
+    10: goto case_10;
+    9: goto case_9;
+    8: goto case_8;
+    7: goto case_7;
+    6: goto case_6;
+    5: goto case_5;
+    4: goto case_4;
+    3: goto case_3;
+    2: goto case_2;
+    1: goto case_1;
+    0: goto case_0;
   end;
 
+case_15:
+  k2 := k2 xor (UInt64(data[i + 14]) shl 48);
+case_14:
+  k2 := k2 xor (UInt64(data[i + 13]) shl 40);
+case_13:
+  k2 := k2 xor (UInt64(data[i + 12]) shl 32);
+case_12:
+  k2 := k2 xor (UInt64(data[i + 11]) shl 24);
+case_11:
+  k2 := k2 xor (UInt64(data[i + 10]) shl 16);
+case_10:
+  k2 := k2 xor (UInt64(data[i + 9]) shl 8);
+case_9:
+  k2 := k2 xor (UInt64(data[i + 8]) shl 0);
+  k2 := k2 * c2;
+  k2 := ROTL64(k2, 33);
+  k2 := k2 * c1;
+  h2 := h2 xor k2;
+case_8:
+  k1 := k1 xor (UInt64(data[i + 7]) shl 56);
+case_7:
+  k1 := k1 xor (UInt64(data[i + 6]) shl 48);
+case_6:
+  k1 := k1 xor (UInt64(data[i + 5]) shl 40);
+case_5:
+  k1 := k1 xor (UInt64(data[i + 4]) shl 32);
+case_4:
+  k1 := k1 xor (UInt64(data[i + 3]) shl 24);
+case_3:
+  k1 := k1 xor (UInt64(data[i + 2]) shl 16);
+case_2:
+  k1 := k1 xor (UInt64(data[i + 1]) shl 8);
+case_1:
+  k1 := k1 xor (UInt64(data[i + 0]) shl 0);
+  k1 := k1 * c1;
+  k1 := ROTL64(k1, 31);
+  k1 := k1 * c2;
+  h1 := h1 xor k1;
+
+case_0:
   //----------
   // finalization
   h1 := h1 xor len;

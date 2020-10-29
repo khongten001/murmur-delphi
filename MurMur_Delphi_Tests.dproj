@@ -151,13 +151,13 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="MurMurHash.pas"/>
-        <DCCReference Include="MurMurHash1Tests.pas"/>
-        <DCCReference Include="MurMurHash2Tests.pas"/>
-        <DCCReference Include="MurMurHash3Tests.pas">
+        <DCCReference Include="tests\MurMurHash1Tests.pas"/>
+        <DCCReference Include="tests\MurMurHash2Tests.pas"/>
+        <DCCReference Include="tests\MurMurHash3Tests.pas">
             <Form>,
-  MurMurHashVsTests in &apos;MurMurHashVsTests.pas&apos;</Form>
+  MurMurHashVsTests in &apos;tests/MurMurHashVsTests.pas&apos;</Form>
         </DCCReference>
-        <DCCReference Include="MurMurHashVsTests.pas"/>
+        <DCCReference Include="tests\MurMurHashVsTests.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
