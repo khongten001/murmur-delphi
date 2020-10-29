@@ -3,9 +3,10 @@ Murmur hash for Delphi
 
 MurmurHash is a fast, non-cryptographic, hash, suitable for hash tables.
 
-It comes in three variants:
+It comes in multiple variants:
 
 - hash result of 32 bits
+- hash result of 64 bits
 - hash result of 128 bits, optimized for x86 architecture
 - hash result of 128 bits, optimized for x64 architecture
 
